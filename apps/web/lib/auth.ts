@@ -1,50 +1,15 @@
-import NextAuth from "next-auth"
-import type { NextAuthConfig } from "next-auth"
-import type { Session } from "next-auth"
-import Google from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import { betterAuth } from "better-auth"
+import { prismaAdapter } from "better-auth/adapters/prisma"
 import { prisma } from "@workspace/database"
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      email: string
-      name?: string | null
-      image?: string | null
-    }
-  }
-}
-
-export const config: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
-  providers: [Google],
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    session({ session, user }) {
-      session.user.id = user.id
-      return session
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     },
   },
-  session: {
-    strategy: "database",
-  },
-}
-
-const nextAuthResult = NextAuth(config)
-
-export const handlers = nextAuthResult.handlers
-export const signOut = nextAuthResult.signOut
-
-export async function auth(): Promise<Session | null> {
-  return nextAuthResult.auth()
-}
-
-export async function signIn(
-  provider?: string,
-  options?: Record<string, unknown>
-) {
-  return nextAuthResult.signIn(provider, options)
-}
+})
