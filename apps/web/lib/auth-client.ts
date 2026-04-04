@@ -1,8 +1,8 @@
 import { createAuthClient } from "better-auth/react"
 
-import { auth } from "@/lib/auth"
+type AuthClient = ReturnType<typeof createAuthClient>
 
-export const authClient = createAuthClient({
+export const authClient: AuthClient = createAuthClient({
   basePath: "/api/auth",
 })
 

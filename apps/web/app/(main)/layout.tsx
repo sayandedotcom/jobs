@@ -23,6 +23,12 @@ export default async function MainLayout({
           </Link>
           <nav className="flex items-center gap-6">
             <Link
+              href="/dashboard"
+              className="text-muted-foreground hover:text-foreground text-sm"
+            >
+              Dashboard
+            </Link>
+            <Link
               href="/jobs"
               className="text-muted-foreground hover:text-foreground text-sm"
             >

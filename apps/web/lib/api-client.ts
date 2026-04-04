@@ -75,6 +75,53 @@ export interface SavedSearch {
   createdAt: string
 }
 
+export interface Agent {
+  id: string
+  userId: string
+  name: string
+  jobTitle: string
+  skills: string[]
+  location: string | null
+  openToRelocate: boolean
+  experienceLevel: string | null
+  salaryMin: number | null
+  salaryMax: number | null
+  jobType: string | null
+  sources: string[]
+  scanIntervalMinutes: number
+  isActive: boolean
+  lastRunAt: string | null
+  nextRunAt: string | null
+  createdAt: string
+  updatedAt: string
+  totalResults: number
+  unviewedResults: number
+  latestRunStatus: string | null
+}
+
+export interface AgentRun {
+  id: string
+  agentId: string
+  status: string
+  postsScanned: number
+  jobsFound: number
+  newJobs: number
+  startedAt: string
+  finishedAt: string | null
+  error: string | null
+}
+
+export interface AgentResult {
+  id: string
+  agentId: string
+  listingId: string
+  relevanceScore: number
+  matchReason: string | null
+  isViewed: boolean
+  createdAt: string
+  listing: Listing
+}
+
 export const api = {
   jobs: {
     list: (params?: {
@@ -139,6 +186,92 @@ export const api = {
     delete: (searchId: string, userId: string) =>
       apiFetch<void>(`/api/searches/${searchId}`, {
         method: "DELETE",
+        params: { userId },
+      }),
+  },
+
+  agents: {
+    list: (userId: string) =>
+      apiFetch<Agent[]>("/api/agents", { params: { userId } }),
+
+    get: (agentId: string, userId: string) =>
+      apiFetch<Agent>(`/api/agents/${agentId}`, { params: { userId } }),
+
+    create: (
+      userId: string,
+      data: {
+        name: string
+        jobTitle: string
+        skills?: string[]
+        location?: string
+        openToRelocate?: boolean
+        experienceLevel?: string
+        salaryMin?: number
+        salaryMax?: number
+        jobType?: string
+        sources?: string[]
+        scanIntervalMinutes?: number
+      }
+    ) =>
+      apiFetch<Agent>("/api/agents", {
+        method: "POST",
+        params: { userId },
+        body: JSON.stringify(data),
+      }),
+
+    update: (
+      agentId: string,
+      userId: string,
+      data: {
+        name?: string
+        jobTitle?: string
+        skills?: string[]
+        location?: string
+        openToRelocate?: boolean
+        experienceLevel?: string
+        salaryMin?: number
+        salaryMax?: number
+        jobType?: string
+        sources?: string[]
+        scanIntervalMinutes?: number
+        isActive?: boolean
+      }
+    ) =>
+      apiFetch<Agent>(`/api/agents/${agentId}`, {
+        method: "PATCH",
+        params: { userId },
+        body: JSON.stringify(data),
+      }),
+
+    delete: (agentId: string, userId: string) =>
+      apiFetch<void>(`/api/agents/${agentId}`, {
+        method: "DELETE",
+        params: { userId },
+      }),
+
+    results: (
+      agentId: string,
+      userId: string,
+      params?: { page?: number; pageSize?: number }
+    ) =>
+      apiFetch<AgentResult[]>(`/api/agents/${agentId}/results`, {
+        params: { userId, ...params },
+      }),
+
+    runs: (agentId: string, userId: string, limit?: number) =>
+      apiFetch<AgentRun[]>(`/api/agents/${agentId}/runs`, {
+        params: { userId, limit },
+      }),
+
+    trigger: (agentId: string, userId: string) =>
+      apiFetch<AgentRun>(`/api/agents/${agentId}/trigger`, {
+        method: "POST",
+        params: { userId },
+      }),
+
+    markViewed: (agentId: string, resultId: string, userId: string) =>
+      apiFetch<void>(`/api/agents/${agentId}/results/${resultId}/view`, {
+        method: "PATCH",
         params: { userId },
       }),
   },
