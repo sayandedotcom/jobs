@@ -9,24 +9,24 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
+  id            String    @id()
+  email         String    @unique
   name          String?
   emailVerified Boolean   @default(false)
   image         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  savedJobs    UserSavedJob[]
+  accounts      Account[]
+  sessions      Session[]
+  savedJobs     UserSavedJob[]
   savedSearches SavedSearch[]
 
-  @@map("users")
+  @@map("user")
 }
 
 model Account {
-  id                    String    @id @default(cuid())
+  id                    String    @id()
   userId                String
   accountId             String
   providerId            String
@@ -36,19 +36,20 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   idToken               String?   @db.Text
+  password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, accountId])
-  @@map("accounts")
+  @@map("account")
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  token     String   @unique
+  id        String   @id()
   userId    String
+  token     String   @unique
   expiresAt DateTime
   ipAddress String?
   userAgent String?
@@ -57,7 +58,18 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("sessions")
+  @@map("session")
+}
+
+model Verification {
+  id         String   @id()
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
 }
 
 model Source {
