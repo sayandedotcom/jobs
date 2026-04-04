@@ -6,14 +6,23 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "lint:fix": "turbo lint:fix",
+    "format": "prettier --write \"**/*.{cjs,mjs,js,jsx,cts,mts,ts,tsx,html,css,json,md}\"",
+    "format:check": "prettier --check \"**/*.{cjs,mjs,js,jsx,cts,mts,ts,tsx,html,css,json,md}\"",
+    "typecheck": "turbo typecheck",
+    "db:generate": "turbo db:generate --filter=@workspace/database",
+    "db:push": "turbo db:push --filter=@workspace/database",
+    "db:migrate": "turbo db:migrate --filter=@workspace/database",
+    "db:studio": "turbo db:studio --filter=@workspace/database",
+    "clean": "turbo clean && rimraf node_modules"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
+    "@workspace/prettier-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "rimraf": "^6.0.1",
     "turbo": "^2.8.17",
     "typescript": "5.9.3"
   },

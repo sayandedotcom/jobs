@@ -27,6 +27,15 @@ out/
 build
 dist
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+*.egg-info/
+.uv/
+.pytest_cache/
+.ruff_cache/
 
 # Debug
 npm-debug.log*
