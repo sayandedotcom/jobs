@@ -1,0 +1,4 @@
+src/generated/
+.env
+.env.local
+node_modules/
