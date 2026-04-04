@@ -7,7 +7,7 @@ This document provides guidance for agentic coding agents working in this reposi
 This is a pnpm + Turborepo monorepo called "jobs" — a job tracking application with:
 
 - **apps/web** — Next.js 16 (App Router) frontend with React 19, Tailwind CSS 4, shadcn/ui
-- **apps/api** — Python FastAPI backend (Python 3.12+, managed by uv)
+- **apps/api** — Python FastAPI backend (Python 3.12+, managed by uv), deployed as Vercel Function
 - **packages/database** — Prisma ORM package with PostgreSQL
 - **packages/ui** — Shared shadcn/ui component library (base-ui/react + CVA)
 - **packages/eslint-config** — Shared ESLint flat configs (base, next, react-internal, node)
