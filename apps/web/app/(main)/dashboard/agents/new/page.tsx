@@ -81,7 +81,7 @@ export default function NewAgentPage() {
           .map((s) => s.trim())
           .filter(Boolean)
 
-        const agent = await api.agents.create(userId, {
+        const agent = await api.agents.create({
           name: form.name,
           jobTitle: form.jobTitle,
           skills,

@@ -1,15 +1,15 @@
+import { getAuthenticatedUserId } from "@/lib/auth-server"
 import { prisma } from "@workspace/database"
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const { searchParams } = new URL(_request.url)
-  const userId = searchParams.get("userId")
-  if (!userId)
-    return Response.json({ error: "userId required" }, { status: 400 })
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
+  const { searchParams } = new URL(request.url)
   const limit = Math.min(
     100,
     Math.max(1, Number(searchParams.get("limit")) || 20)

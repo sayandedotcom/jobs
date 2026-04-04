@@ -1,10 +1,9 @@
+import { getAuthenticatedUserId } from "@/lib/auth-server"
 import { prisma } from "@workspace/database"
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get("userId")
-  if (!userId)
-    return Response.json({ error: "userId required" }, { status: 400 })
+export async function GET() {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const rows = await prisma.userSavedJob.findMany({
     where: { userId },
@@ -37,10 +36,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get("userId")
-  if (!userId)
-    return Response.json({ error: "userId required" }, { status: 400 })
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = (await request.json()) as { listingId: string }
   if (!body.listingId) {

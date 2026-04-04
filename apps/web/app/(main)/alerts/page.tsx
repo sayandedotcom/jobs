@@ -13,14 +13,13 @@ export default function AlertsPage() {
   const [location, setLocation] = React.useState("")
 
   const fetchSearches = React.useCallback(async () => {
-    if (!session?.user?.id) return
     try {
-      const data = await api.searches.list(session.user.id)
+      const data = await api.searches.list()
       setSearches(data)
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id])
+  }, [])
 
   React.useEffect(() => {
     fetchSearches()
@@ -28,9 +27,8 @@ export default function AlertsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!session?.user?.id) return
     try {
-      await api.searches.create(session.user.id, {
+      await api.searches.create({
         keywords: keywords || undefined,
         location: location || undefined,
       })
@@ -43,9 +41,8 @@ export default function AlertsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!session?.user?.id) return
     try {
-      await api.searches.delete(id, session.user.id)
+      await api.searches.delete(id)
       setSearches((prev) => prev.filter((s) => s.id !== id))
     } catch {
       // ignore

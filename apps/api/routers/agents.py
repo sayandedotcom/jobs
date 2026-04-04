@@ -17,6 +17,12 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 
 MIN_SCAN_INTERVAL = 30
 
+PLAN_AGENT_LIMITS: dict[str, int] = {
+    "free": 0,
+    "pro": 5,
+    "enterprise": -1,
+}
+
 
 def _agent_row_to_response(
     row, total_results: int = 0, unviewed: int = 0, latest_status: str | None = None
@@ -65,6 +71,27 @@ async def create_agent(data: CreateAgent, userId: str = Query(...)):
         )
 
     pool = await get_pool()
+
+    user = await pool.fetchrow("SELECT plan FROM user WHERE id = $1", userId)
+    user_plan = user["plan"] if user else "free"
+    limit = PLAN_AGENT_LIMITS.get(user_plan, 0)
+
+    if limit == 0:
+        raise HTTPException(
+            status_code=403,
+            detail="Free plan does not include agent creation. Please upgrade to Pro.",
+        )
+
+    if limit > 0:
+        active_count = await pool.fetchval(
+            "SELECT COUNT(*) FROM agents WHERE user_id = $1 AND is_active = true",
+            userId,
+        )
+        if active_count >= limit:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Agent limit reached ({limit} for {user_plan} plan). Please upgrade or deactivate existing agents.",
+            )
     next_run = datetime.now(UTC) + timedelta(minutes=data.scanIntervalMinutes)
     row = await pool.fetchrow(
         """INSERT INTO agents (user_id, name, job_title, skills, location, open_to_relocate,

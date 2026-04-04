@@ -25,10 +25,10 @@ export default function JobDetailPage({
   }, [id])
 
   const handleSave = async () => {
-    if (!session?.user?.id || !job) return
+    if (!job) return
     try {
       if (!saved) {
-        await api.saved.create(job.id, session.user.id)
+        await api.saved.create(job.id)
         setSaved(true)
       }
     } catch {

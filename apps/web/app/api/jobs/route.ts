@@ -1,3 +1,4 @@
+import { getAuthenticatedUserId } from "@/lib/auth-server"
 import { prisma } from "@workspace/database"
 
 export async function GET(request: Request) {
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
     100,
     Math.max(1, Number(searchParams.get("pageSize")) || 20)
   )
-  const userId = searchParams.get("userId")
+  const userId = await getAuthenticatedUserId()
 
   const where: Record<string, unknown> = {}
   if (search) {

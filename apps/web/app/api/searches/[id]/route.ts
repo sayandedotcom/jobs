@@ -1,3 +1,4 @@
+import { getAuthenticatedUserId } from "@/lib/auth-server"
 import { prisma } from "@workspace/database"
 
 export async function DELETE(
@@ -5,10 +6,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const { searchParams } = new URL(_request.url)
-  const userId = searchParams.get("userId")
-  if (!userId)
-    return Response.json({ error: "userId required" }, { status: 400 })
+  const userId = await getAuthenticatedUserId()
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const result = await prisma.savedSearch.deleteMany({
     where: { id, userId },

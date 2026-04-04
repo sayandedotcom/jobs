@@ -49,7 +49,7 @@ export default function DashboardPage() {
     if (!userId) return
     setLoading(true)
     api.agents
-      .list(userId)
+      .list()
       .then(setAgents)
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {agents.map((agent) => (
-                  <AgentCard key={agent.id} agent={agent} userId={userId} />
+                  <AgentCard key={agent.id} agent={agent} />
                 ))}
               </div>
             )}
@@ -193,13 +193,13 @@ export default function DashboardPage() {
   )
 }
 
-function AgentCard({ agent, userId }: { agent: Agent; userId: string }) {
+function AgentCard({ agent }: { agent: Agent }) {
   const [toggling, setToggling] = React.useState(false)
 
   const handleToggle = React.useCallback(async () => {
     setToggling(true)
     try {
-      await api.agents.update(agent.id, userId, {
+      await api.agents.update(agent.id, {
         isActive: !agent.isActive,
       })
       window.location.reload()
@@ -208,7 +208,7 @@ function AgentCard({ agent, userId }: { agent: Agent; userId: string }) {
     } finally {
       setToggling(false)
     }
-  }, [agent.id, agent.isActive, userId])
+  }, [agent.id, agent.isActive])
 
   return (
     <Card>

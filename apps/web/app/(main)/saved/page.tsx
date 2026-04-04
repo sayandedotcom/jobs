@@ -10,17 +10,15 @@ export default function SavedPage() {
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    if (!session?.user?.id) return
     api.saved
-      .list(session.user.id)
+      .list()
       .then(setSavedJobs)
       .finally(() => setLoading(false))
-  }, [session?.user?.id])
+  }, [])
 
   const handleRemove = async (savedId: string) => {
-    if (!session?.user?.id) return
     try {
-      await api.saved.delete(savedId, session.user.id)
+      await api.saved.delete(savedId)
       setSavedJobs((prev) => prev.filter((j) => j.id !== savedId))
     } catch {
       // ignore

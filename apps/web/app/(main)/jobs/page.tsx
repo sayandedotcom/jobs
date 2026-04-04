@@ -26,7 +26,6 @@ export default function JobsPage() {
           jobType: jobType === "all" ? undefined : jobType,
           page,
           pageSize: 20,
-          userId: session?.user?.id,
         })
         setJobs(data.jobs)
         setTotal(data.total)
@@ -71,7 +70,7 @@ export default function JobsPage() {
       ) : (
         <div className="space-y-3">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} userId={session?.user?.id} />
+            <JobCard key={job.id} job={job} />
           ))}
         </div>
       )}

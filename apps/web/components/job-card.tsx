@@ -4,14 +4,13 @@ import * as React from "react"
 import { Badge } from "@workspace/ui/components/badge"
 import { api, type Listing } from "@/lib/api-client"
 
-function JobCard({ job, userId }: { job: Listing; userId?: string }) {
+function JobCard({ job }: { job: Listing }) {
   const [saved, setSaved] = React.useState(job.isSaved)
 
   const handleSave = async () => {
-    if (!userId) return
     try {
       if (!saved) {
-        await api.saved.create(job.id, userId)
+        await api.saved.create(job.id)
         setSaved(true)
       } else {
         setSaved(false)

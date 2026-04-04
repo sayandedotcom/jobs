@@ -68,8 +68,6 @@ export default function AgentDetailPage({
   const [triggering, setTriggering] = React.useState(false)
   const [toggling, setToggling] = React.useState(false)
 
-  const userId = session?.user?.id ?? ""
-
   const user = {
     name: session?.user?.name ?? "User",
     email: session?.user?.email ?? "",
@@ -77,12 +75,12 @@ export default function AgentDetailPage({
   }
 
   React.useEffect(() => {
-    if (!userId || !id) return
+    if (!id) return
     setLoading(true)
     Promise.all([
-      api.agents.get(id, userId),
-      api.agents.results(id, userId),
-      api.agents.runs(id, userId),
+      api.agents.get(id),
+      api.agents.results(id),
+      api.agents.runs(id),
     ])
       .then(([agentData, resultsData, runsData]) => {
         setAgent(agentData)
@@ -91,13 +89,13 @@ export default function AgentDetailPage({
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [userId, id])
+  }, [id])
 
   const handleToggle = React.useCallback(async () => {
     if (!agent) return
     setToggling(true)
     try {
-      await api.agents.update(agent.id, userId, {
+      await api.agents.update(agent.id, {
         isActive: !agent.isActive,
       })
       setAgent((a) => (a ? { ...a, isActive: !a.isActive } : a))
@@ -106,13 +104,13 @@ export default function AgentDetailPage({
     } finally {
       setToggling(false)
     }
-  }, [agent, userId])
+  }, [agent])
 
   const handleTrigger = React.useCallback(async () => {
     if (!agent) return
     setTriggering(true)
     try {
-      const run = await api.agents.trigger(agent.id, userId)
+      const run = await api.agents.trigger(agent.id)
       setRuns((prev) => [run, ...prev])
       setAgent((a) =>
         a
@@ -127,18 +125,18 @@ export default function AgentDetailPage({
     } finally {
       setTriggering(false)
     }
-  }, [agent, userId])
+  }, [agent])
 
   const handleDelete = React.useCallback(async () => {
     if (!agent) return
     if (!confirm("Are you sure you want to delete this agent?")) return
     try {
-      await api.agents.delete(agent.id, userId)
+      await api.agents.delete(agent.id)
       router.push("/dashboard")
     } catch (err) {
       console.error(err)
     }
-  }, [agent, userId, router])
+  }, [agent, router])
 
   if (loading) {
     return (

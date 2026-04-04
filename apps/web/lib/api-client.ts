@@ -131,7 +131,6 @@ export const api = {
       company?: string
       page?: number
       pageSize?: number
-      userId?: string
     }) =>
       apiFetch<ListingList>("/api/jobs", {
         params: params as Record<string, string | number | undefined>,
@@ -141,87 +140,70 @@ export const api = {
   },
 
   saved: {
-    list: (userId: string) =>
-      apiFetch<UserSavedJob[]>("/api/saved", { params: { userId } }),
+    list: () => apiFetch<UserSavedJob[]>("/api/saved"),
 
-    create: (listingId: string, userId: string) =>
+    create: (listingId: string) =>
       apiFetch<UserSavedJob>("/api/saved", {
         method: "POST",
-        params: { userId },
         body: JSON.stringify({ listingId }),
       }),
 
-    update: (
-      savedId: string,
-      userId: string,
-      data: { status?: string; notes?: string }
-    ) =>
+    update: (savedId: string, data: { status?: string; notes?: string }) =>
       apiFetch<UserSavedJob>(`/api/saved/${savedId}`, {
         method: "PATCH",
-        params: { userId },
         body: JSON.stringify(data),
       }),
 
-    delete: (savedId: string, userId: string) =>
+    delete: (savedId: string) =>
       apiFetch<void>(`/api/saved/${savedId}`, {
         method: "DELETE",
-        params: { userId },
       }),
   },
 
   searches: {
-    list: (userId: string) =>
-      apiFetch<SavedSearch[]>("/api/searches", { params: { userId } }),
+    list: () => apiFetch<SavedSearch[]>("/api/searches"),
 
-    create: (
-      userId: string,
-      data: { keywords?: string; location?: string; jobType?: string }
-    ) =>
+    create: (data: {
+      keywords?: string
+      location?: string
+      jobType?: string
+    }) =>
       apiFetch<SavedSearch>("/api/searches", {
         method: "POST",
-        params: { userId },
         body: JSON.stringify(data),
       }),
 
-    delete: (searchId: string, userId: string) =>
+    delete: (searchId: string) =>
       apiFetch<void>(`/api/searches/${searchId}`, {
         method: "DELETE",
-        params: { userId },
       }),
   },
 
   agents: {
-    list: (userId: string) =>
-      apiFetch<Agent[]>("/api/agents", { params: { userId } }),
+    list: () => apiFetch<Agent[]>("/api/agents"),
 
-    get: (agentId: string, userId: string) =>
-      apiFetch<Agent>(`/api/agents/${agentId}`, { params: { userId } }),
+    get: (agentId: string) => apiFetch<Agent>(`/api/agents/${agentId}`),
 
-    create: (
-      userId: string,
-      data: {
-        name: string
-        jobTitle: string
-        skills?: string[]
-        location?: string
-        openToRelocate?: boolean
-        experienceLevel?: string
-        salaryMin?: number
-        salaryMax?: number
-        jobType?: string
-        sources?: string[]
-        scanIntervalMinutes?: number
-      }
-    ) =>
+    create: (data: {
+      name: string
+      jobTitle: string
+      skills?: string[]
+      location?: string
+      openToRelocate?: boolean
+      experienceLevel?: string
+      salaryMin?: number
+      salaryMax?: number
+      jobType?: string
+      sources?: string[]
+      scanIntervalMinutes?: number
+    }) =>
       apiFetch<Agent>("/api/agents", {
         method: "POST",
-        params: { userId },
         body: JSON.stringify(data),
       }),
 
     update: (
       agentId: string,
-      userId: string,
       data: {
         name?: string
         jobTitle?: string
@@ -239,40 +221,32 @@ export const api = {
     ) =>
       apiFetch<Agent>(`/api/agents/${agentId}`, {
         method: "PATCH",
-        params: { userId },
         body: JSON.stringify(data),
       }),
 
-    delete: (agentId: string, userId: string) =>
+    delete: (agentId: string) =>
       apiFetch<void>(`/api/agents/${agentId}`, {
         method: "DELETE",
-        params: { userId },
       }),
 
-    results: (
-      agentId: string,
-      userId: string,
-      params?: { page?: number; pageSize?: number }
-    ) =>
+    results: (agentId: string, params?: { page?: number; pageSize?: number }) =>
       apiFetch<AgentResult[]>(`/api/agents/${agentId}/results`, {
-        params: { userId, ...params },
+        params: { ...params },
       }),
 
-    runs: (agentId: string, userId: string, limit?: number) =>
+    runs: (agentId: string, limit?: number) =>
       apiFetch<AgentRun[]>(`/api/agents/${agentId}/runs`, {
-        params: { userId, limit },
+        params: { limit },
       }),
 
-    trigger: (agentId: string, userId: string) =>
+    trigger: (agentId: string) =>
       apiFetch<AgentRun>(`/api/agents/${agentId}/trigger`, {
         method: "POST",
-        params: { userId },
       }),
 
-    markViewed: (agentId: string, resultId: string, userId: string) =>
+    markViewed: (agentId: string, resultId: string) =>
       apiFetch<void>(`/api/agents/${agentId}/results/${resultId}/view`, {
         method: "PATCH",
-        params: { userId },
       }),
   },
 }
