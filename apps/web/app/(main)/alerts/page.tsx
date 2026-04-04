@@ -2,11 +2,11 @@
 
 import * as React from "react"
 import { api, type SavedSearch } from "@/lib/api-client"
-import { useSession } from "next-auth/react"
+import { authClient } from "@/lib/auth-client"
 import { Input } from "@workspace/ui/components/input"
 
 export default function AlertsPage() {
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [searches, setSearches] = React.useState<SavedSearch[]>([])
   const [loading, setLoading] = React.useState(true)
   const [keywords, setKeywords] = React.useState("")

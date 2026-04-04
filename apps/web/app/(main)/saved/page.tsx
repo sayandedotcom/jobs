@@ -2,10 +2,10 @@
 
 import * as React from "react"
 import { api, type UserSavedJob } from "@/lib/api-client"
-import { useSession } from "next-auth/react"
+import { authClient } from "@/lib/auth-client"
 
 export default function SavedPage() {
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [savedJobs, setSavedJobs] = React.useState<UserSavedJob[]>([])
   const [loading, setLoading] = React.useState(true)
 
