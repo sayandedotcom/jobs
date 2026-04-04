@@ -5,3 +5,7 @@ node_modules/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/
+__pycache__/
+.venv/
+.ruff_cache/
+.pytest_cache/

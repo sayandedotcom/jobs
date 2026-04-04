@@ -8,8 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .turbo node_modules .next"
   },
   "dependencies": {
     "@workspace/ui": "workspace:*",
@@ -25,8 +28,11 @@
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@workspace/eslint-config": "workspace:^",
+    "@workspace/prettier-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "rimraf": "^6.0.1",
     "typescript": "^5.9.3"
   }
 }
