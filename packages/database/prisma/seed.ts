@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 
+import { subreddits } from "./subreddits.config.js"
+
 const prisma = new PrismaClient()
 
 async function main() {
@@ -12,29 +14,6 @@ async function main() {
       isActive: true,
     },
   })
-
-  const subreddits = [
-    "forhire",
-    "jobbit",
-    "remotejs",
-    "remotework",
-    "jobs",
-    "careerguidance",
-    "webdev",
-    "javascriptjobs",
-    "pythonjobs",
-    "reactjs",
-    "vuejs",
-    "node",
-    "golang",
-    "rust",
-    "datasciencejobs",
-    "machinelearningjobs",
-    "designjobs",
-    "techjobs",
-    "startupjobs",
-    "big4jobs",
-  ]
 
   for (const name of subreddits) {
     await prisma.subSource.upsert({
