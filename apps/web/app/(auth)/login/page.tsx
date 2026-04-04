@@ -1,7 +1,6 @@
 "use client"
 
-import * as React from "react"
-import { signIn } from "next-auth/react"
+import { authClient } from "@/lib/auth-client"
 
 export default function LoginPage() {
   return (
@@ -14,7 +13,12 @@ export default function LoginPage() {
           </p>
         </div>
         <button
-          onClick={() => signIn("google", { callbackUrl: "/jobs" })}
+          onClick={() =>
+            authClient.signIn.social({
+              provider: "google",
+              callbackURL: "/jobs",
+            })
+          }
           className="flex w-full items-center justify-center gap-2 rounded-md bg-white px-4 py-2.5 text-sm font-medium text-black shadow-sm transition-colors hover:bg-gray-100"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
