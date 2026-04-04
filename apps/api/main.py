@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.database import close_pool
+from routers import agents as agents_router
 from routers import jobs as jobs_router
 from routers import saved as saved_router
 from routers import scan as scan_router
@@ -33,6 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(agents_router.router, prefix="/api")
 app.include_router(jobs_router.router, prefix="/api")
 app.include_router(saved_router.router, prefix="/api")
 app.include_router(searches_router.router, prefix="/api")
