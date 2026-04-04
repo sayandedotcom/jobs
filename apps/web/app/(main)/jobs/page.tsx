@@ -4,10 +4,10 @@ import * as React from "react"
 import { JobCard } from "@/components/job-card"
 import { JobFilters } from "@/components/job-filters"
 import { api, type Listing } from "@/lib/api-client"
-import { useSession } from "next-auth/react"
+import { authClient } from "@/lib/auth-client"
 
 export default function JobsPage() {
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [jobs, setJobs] = React.useState<Listing[]>([])
   const [total, setTotal] = React.useState(0)
   const [page, setPage] = React.useState(1)

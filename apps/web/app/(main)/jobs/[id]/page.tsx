@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { api, type Listing } from "@/lib/api-client"
-import { useSession } from "next-auth/react"
+import { authClient } from "@/lib/auth-client"
 import { Badge } from "@workspace/ui/components/badge"
 
 export default function JobDetailPage({
@@ -12,7 +12,7 @@ export default function JobDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = React.use(params)
-  const { data: session } = useSession()
+  const { data: session } = authClient.useSession()
   const [job, setJob] = React.useState<Listing | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [saved, setSaved] = React.useState(false)
