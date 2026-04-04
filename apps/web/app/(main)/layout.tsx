@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 export default async function MainLayout({
@@ -8,7 +9,9 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
   if (!session) redirect("/login")
 
   return (
