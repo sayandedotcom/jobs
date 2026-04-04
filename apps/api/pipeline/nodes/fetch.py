@@ -1,21 +1,16 @@
 from core.database import get_pool
+from pipeline.source_configs import get_source_config
+from pipeline.sources.registry import get_source
 from pipeline.state import PipelineState
 
 
 async def fetch_node(state: PipelineState) -> dict:
-    from pipeline.sources.reddit import RedditSource
-    from core.config import settings
-
     pool = await get_pool()
     source_name = state["source_name"]
 
-    if source_name == "reddit":
-        source = RedditSource(
-            client_id=settings.REDDIT_CLIENT_ID,
-            client_secret=settings.REDDIT_CLIENT_SECRET,
-            user_agent=settings.REDDIT_USER_AGENT,
-        )
-    else:
+    config = get_source_config(source_name)
+    source = get_source(source_name, **config)
+    if not source:
         return {"raw_posts": [], "errors": state["errors"] + 1}
 
     rows = await pool.fetch(

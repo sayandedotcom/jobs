@@ -1,12 +1,23 @@
 import json
-from datetime import datetime, UTC
+from datetime import datetime, timedelta, UTC
 
 from langchain_core.messages import HumanMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 from core.config import settings
 from core.database import get_pool
+from pipeline.source_configs import get_source_config
+from pipeline.sources.registry import get_source
 
+STALE_THRESHOLD_HOURS = 2
+
+SIMILARITY_THRESHOLD = 0.92
+
+PLAN_AGENT_LIMITS: dict[str, int] = {
+    "free": 0,
+    "pro": 5,
+    "enterprise": -1,
+}
 
 MATCH_PROMPT = """You are a job matching assistant. Given a job listing and a candidate's profile, score how well the job matches the candidate.
 
@@ -48,20 +59,51 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
         else json.loads(agent["sources"] or "[]")
     )
 
-    raw_posts = []
-    for source_name in sources:
-        posts = await _fetch_for_source(source_name, agent)
-        raw_posts.extend(posts)
-
-    filtered = _filter_posts(raw_posts, skills, agent["job_title"])
-    extracted_jobs = await _extract_jobs(filtered)
-
-    new_listing_ids = await _store_listings(
-        extracted_jobs, sources[0] if sources else "reddit"
+    last_run = await pool.fetchrow(
+        "SELECT started_at FROM agent_runs WHERE agent_id = $1 AND status = 'completed' ORDER BY started_at DESC LIMIT 1",
+        agent["id"],
     )
+    since = last_run["started_at"] if last_run else None
+
+    pool_listing_ids, fetched_listing_ids = [], []
+    posts_scanned = 0
+
+    if since is not None:
+        pool_listing_ids = await _query_existing_listings(since)
+        posts_scanned = len(pool_listing_ids)
+
+    stale_sources = await _get_stale_sources(sources)
+    if stale_sources:
+        raw_posts = []
+        for source_name in stale_sources:
+            posts = await _fetch_for_source(source_name, agent)
+            raw_posts.extend(posts)
+
+        if raw_posts:
+            filtered = _filter_posts(raw_posts, skills, agent["job_title"])
+            extracted_jobs = await _extract_jobs(filtered)
+            deduped = await _dedup_extracted_jobs(extracted_jobs)
+            fetched_listing_ids = await _store_listings(
+                deduped, stale_sources[0] if stale_sources else "reddit"
+            )
+            posts_scanned += len(raw_posts)
+
+    all_listing_ids = list(
+        {lid for lid in pool_listing_ids + fetched_listing_ids if lid}
+    )
+
+    already_matched = {
+        r["listing_id"]
+        for r in await pool.fetch(
+            "SELECT listing_id FROM agent_results WHERE agent_id = $1",
+            agent["id"],
+        )
+    }
+    new_listing_ids = [lid for lid in all_listing_ids if lid not in already_matched]
+
     matched = await _match_listings_to_agent(new_listing_ids, agent, skills)
 
-    jobs_found = len(new_listing_ids)
+    jobs_found = len(all_listing_ids)
     new_jobs = 0
     for listing_id, score, reason in matched:
         if score >= 0.5:
@@ -81,7 +123,7 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
     await pool.execute(
         """UPDATE agent_runs SET status = 'completed', posts_scanned = $1, jobs_found = $2, new_jobs = $3, finished_at = $4
         WHERE id = $5""",
-        len(raw_posts),
+        posts_scanned,
         jobs_found,
         new_jobs,
         now,
@@ -91,37 +133,54 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
     await pool.execute(
         """UPDATE agents SET last_run_at = $1, next_run_at = $2 WHERE id = $3""",
         now,
-        now.__class__.utcnow() + __import__("datetime").timedelta(minutes=interval),
+        now + timedelta(minutes=interval),
         agent["id"],
     )
 
     return {
-        "postsScanned": len(raw_posts),
+        "postsScanned": posts_scanned,
         "jobsFound": jobs_found,
         "newJobs": new_jobs,
     }
 
 
+async def _query_existing_listings(since: datetime) -> list[str]:
+    pool = await get_pool()
+    rows = await pool.fetch(
+        "SELECT id FROM listings WHERE created_at > $1 ORDER BY created_at DESC",
+        since,
+    )
+    return [row["id"] for row in rows]
+
+
+async def _get_stale_sources(sources: list[str]) -> list[str]:
+    pool = await get_pool()
+    stale = []
+    cutoff = datetime.now(UTC) - timedelta(hours=STALE_THRESHOLD_HOURS)
+    for source_name in sources:
+        last_scan = await pool.fetchrow(
+            "SELECT started_at FROM scan_runs WHERE source_name = $1 AND status = 'completed' ORDER BY started_at DESC LIMIT 1",
+            source_name,
+        )
+        if not last_scan or last_scan["started_at"] < cutoff:
+            stale.append(source_name)
+    return stale
+
+
 async def _fetch_for_source(source_name: str, agent: dict) -> list[dict]:
     pool = await get_pool()
 
-    if source_name == "reddit":
-        from pipeline.sources.reddit import RedditSource
-
-        source = RedditSource(
-            client_id=settings.REDDIT_CLIENT_ID,
-            client_secret=settings.REDDIT_CLIENT_SECRET,
-            user_agent=settings.REDDIT_USER_AGENT,
-        )
-    else:
+    config = get_source_config(source_name)
+    source = get_source(source_name, **config)
+    if not source:
         return []
 
     rows = await pool.fetch(
         "SELECT name FROM sub_sources WHERE source_id = (SELECT id FROM sources WHERE name = $1) AND is_active = true",
         source_name,
     )
-    subreddits = [row["name"] for row in rows]
-    if not subreddits:
+    sub_sources = [row["name"] for row in rows]
+    if not sub_sources:
         return []
 
     last_run = await pool.fetchrow(
@@ -131,7 +190,7 @@ async def _fetch_for_source(source_name: str, agent: dict) -> list[dict]:
     since = last_run["started_at"] if last_run else None
 
     try:
-        return await source.fetch_new_posts(subreddits, since)
+        return await source.fetch_new_posts(sub_sources, since)
     except Exception:
         return []
 
@@ -175,7 +234,7 @@ async def _extract_jobs(posts: list[dict]) -> list[tuple[dict, dict]]:
         temperature=0,
     )
 
-    extraction_prompt = """You are a job posting extraction assistant. Given a Reddit post, extract structured job information.
+    extraction_prompt = """You are a job posting extraction assistant. Given a post, extract structured job information.
 
 If the post is NOT a job posting, set is_job_posting to false.
 
@@ -221,6 +280,70 @@ Post content:
     return extracted
 
 
+async def _dedup_extracted_jobs(
+    jobs: list[tuple[dict, dict]],
+) -> list[tuple[dict, dict]]:
+    if not jobs:
+        return jobs
+
+    pool = await get_pool()
+    deduped = []
+
+    for post, job in jobs:
+        existing = await pool.fetchrow(
+            "SELECT id, listing_id FROM raw_posts WHERE external_id = $1",
+            post["external_id"],
+        )
+        if existing:
+            continue
+        deduped.append((post, job))
+
+    if not deduped:
+        return deduped
+
+    embeddings_model = GoogleGenerativeAIEmbeddings(
+        model="models/text-embedding-004",
+        google_api_key=settings.GEMINI_API_KEY,
+    )
+
+    existing_rows = await pool.fetch(
+        "SELECT id, embedding_text FROM listings WHERE created_at > NOW() - INTERVAL '30 days'"
+    )
+    existing_embeddings = []
+    if existing_rows:
+        texts = [r["embedding_text"] or "" for r in existing_rows]
+        existing_embeddings = await embeddings_model.aembed_documents(texts)
+
+    unique = []
+    for post, job in deduped:
+        embed_text = f"{job['title']} {job['company']} {job.get('location', '')}"
+        if not existing_rows:
+            unique.append((post, job))
+            continue
+
+        new_embedding = await embeddings_model.aembed_query(embed_text)
+        is_dup = False
+        for i, _row in enumerate(existing_rows):
+            if i < len(existing_embeddings):
+                score = _cosine_similarity(new_embedding, existing_embeddings[i])
+                if score >= SIMILARITY_THRESHOLD:
+                    is_dup = True
+                    break
+        if not is_dup:
+            unique.append((post, job))
+
+    return unique
+
+
+def _cosine_similarity(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    mag_a = sum(x * x for x in a) ** 0.5
+    mag_b = sum(x * x for x in b) ** 0.5
+    if mag_a == 0 or mag_b == 0:
+        return 0.0
+    return dot / (mag_a * mag_b)
+
+
 async def _store_listings(jobs: list[tuple[dict, dict]], source_name: str) -> list[str]:
     if not jobs:
         return []
@@ -237,7 +360,7 @@ async def _store_listings(jobs: list[tuple[dict, dict]], source_name: str) -> li
 
     for post, job in jobs:
         existing = await pool.fetchrow(
-            "SELECT id FROM raw_posts WHERE external_id = $1",
+            "SELECT id, listing_id FROM raw_posts WHERE external_id = $1",
             post["external_id"],
         )
         if existing:

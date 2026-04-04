@@ -2,9 +2,11 @@ from datetime import datetime, UTC
 
 import asyncpraw
 from pipeline.sources.base import BaseSource
+from pipeline.sources.registry import register_source
 from pipeline.state import RawPostData
 
 
+@register_source
 class RedditSource(BaseSource):
     def __init__(
         self,
