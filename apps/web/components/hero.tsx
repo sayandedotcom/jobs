@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client"
 import { siteConfig } from "@/lib/site-config"
 import { Button } from "@workspace/ui/components/button"
 import { Spotlight } from "@workspace/ui/components/ui/spotlight-new"
+import { AnimatedBeamHero } from "@/components/animated-beam-hero"
 import { Bot } from "lucide-react"
 
 export function Hero() {
@@ -14,11 +15,9 @@ export function Hero() {
       callbackURL: siteConfig.auth.callbackUrl,
     })
 
-  const BadgeIcon = siteConfig.hero.badge.icon
-
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 bg-transparent backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
@@ -39,35 +38,23 @@ export function Hero() {
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col">
-        <section className="bg-grid-white/[0.02] relative h-[40rem] w-full overflow-hidden bg-black/[0.96] antialiased md:flex md:items-center md:justify-center">
-          <Spotlight />
-          <div className="relative z-10 mx-auto w-full max-w-7xl p-4 pt-20 text-center md:pt-0">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-neutral-300">
-              <BadgeIcon className="h-3.5 w-3.5" />
-              {siteConfig.hero.badge.text}
-            </div>
-            <h1 className="bg-gradient-to-b from-neutral-50 to-neutral-400 bg-clip-text text-center text-4xl font-bold text-transparent md:text-7xl">
-              {siteConfig.hero.heading}
-              <br />
-              <span className="silver">{siteConfig.hero.headingHighlight}</span>
+      <main className="flex flex-1 flex-col gap-6">
+        <section className="bg-grid-white/[0.02] relative w-full overflow-hidden bg-black/[0.96] antialiased md:flex md:items-center md:justify-center">
+          {/* <Spotlight /> */}
+          <div className="relative z-10 mx-auto w-full px-4 md:px-0">
+            <AnimatedBeamHero
+              heading={siteConfig.hero.heading}
+              headingHighlight={siteConfig.hero.headingHighlight}
+              headingHighlightClass={siteConfig.hero.headingHighlightClass}
+              subheading={siteConfig.hero.subheading}
+              ctaText={siteConfig.hero.cta.text}
+              ctaIcon={siteConfig.hero.cta.icon}
+              ctaSubtext={siteConfig.hero.ctaSubtext}
+              onCtaClick={signIn}
+            />
+            <h1 className="sr-only">
+              {siteConfig.hero.heading} {siteConfig.hero.headingHighlight}
             </h1>
-            <p className="mx-auto mt-4 max-w-lg text-center text-base font-normal text-neutral-300">
-              {siteConfig.hero.subheading}
-            </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Button
-                size="lg"
-                onClick={signIn}
-                className="cursor-pointer gap-2 px-8"
-              >
-                {siteConfig.hero.cta.text}
-                <siteConfig.hero.cta.icon className="h-4 w-4" />
-              </Button>
-              <p className="text-xs text-neutral-500">
-                {siteConfig.hero.ctaSubtext}
-              </p>
-            </div>
           </div>
         </section>
 
