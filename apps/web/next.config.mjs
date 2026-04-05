@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@workspace/ui"],
+  transpilePackages: ["@workspace/ui", "@workspace/database"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+    ],
+  },
 }
 
 if (process.env.NODE_ENV === "development") {
