@@ -1,9 +1,11 @@
 import { createEnv } from "@t3-oss/env-core"
 import fs from "node:fs"
-import path from "path"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { z } from "zod"
 
-const envPath = path.resolve(import.meta.dirname, "../../../.env")
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const envPath = path.resolve(__dirname, "../../../.env")
 if (fs.existsSync(envPath)) {
   const envFile = fs.readFileSync(envPath, "utf8")
   for (const line of envFile.split(/\r?\n/)) {

@@ -2,7 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { Pool } from "pg"
 
-import { env } from "./env.js"
+import { env } from "./env"
 
 declare global {
   var prisma: PrismaClient | undefined
