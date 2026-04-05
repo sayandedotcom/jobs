@@ -127,3 +127,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes silver-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.silver {
+  background: linear-gradient(
+    90deg,
+    #8a8a8a 0%,
+    #c0c0c0 25%,
+    #f0f0f0 50%,
+    #c0c0c0 75%,
+    #8a8a8a 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: silver-shimmer 3s linear infinite;
+}
