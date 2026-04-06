@@ -8,6 +8,8 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -15,6 +17,7 @@ import {
   SidebarRail,
 } from "@workspace/ui/components/sidebar"
 import { NavUser } from "@/components/nav-user"
+import { api } from "@/lib/api-client"
 import {
   BotIcon,
   PlusCircleIcon,
@@ -26,7 +29,6 @@ import {
 
 export function AppSidebar({
   user,
-  agentCount = 0,
   ...props
 }: {
   user: {
@@ -34,9 +36,16 @@ export function AppSidebar({
     email: string
     avatar: string
   }
-  agentCount?: number
 } & React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const [agentCount, setAgentCount] = React.useState(0)
+
+  React.useEffect(() => {
+    api.agents
+      .list()
+      .then((agents) => setAgentCount(agents.length))
+      .catch(() => {})
+  }, [])
 
   const navItems = [
     {
@@ -66,13 +75,17 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+            <SidebarMenuButton
+              size="lg"
+              tooltip="JobAgg Agents"
+              render={<Link href="/dashboard" />}
+            >
+              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                 <BotIcon className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">JobAgg Agents</span>
-                <span className="text-muted-foreground truncate text-xs">
+                <span className="truncate text-xs">
                   {agentCount} agent{agentCount !== 1 ? "s" : ""} deployed
                 </span>
               </div>
@@ -81,37 +94,37 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <div className="px-4 py-2">
-          <h4 className="text-muted-foreground mb-1 text-xs font-medium">
-            Navigation
-          </h4>
-        </div>
-        <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarMenu>
+            {navItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  isActive={pathname === item.href}
+                  tooltip={item.title}
+                  render={<Link href={item.href} />}
+                >
+                  {item.icon}
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>AI Agents</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={pathname === item.href}
-                render={<Link href={item.href} />}
+                tooltip="Deploy New Agent"
+                render={<Link href="/dashboard/agents/new" />}
               >
-                {item.icon}
-                <span>{item.title}</span>
+                <PlusCircleIcon className="size-4" />
+                <span>Deploy New Agent</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-        <div className="mt-4 px-4 py-2">
-          <h4 className="text-muted-foreground mb-1 text-xs font-medium">
-            AI Agents
-          </h4>
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton render={<Link href="/dashboard/agents/new" />}>
-              <PlusCircleIcon className="size-4" />
-              <span>Deploy New Agent</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
