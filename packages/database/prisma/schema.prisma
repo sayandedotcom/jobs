@@ -92,6 +92,7 @@ model SubSource {
   id        String   @id @default(cuid())
   sourceId  String
   name      String
+  type      String   @default("subreddit")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
