@@ -1,16 +1,16 @@
-"use client";
-import React, { useEffect, useState, useMemo, useCallback, memo } from "react";
+"use client"
+import React, { useEffect, useState, useMemo, useCallback, memo } from "react"
 import {
   motion,
   useMotionValue,
   useSpring,
   useTransform,
   MotionValue,
-} from "motion/react";
-import { cn } from "@workspace/ui/lib/utils";
+} from "motion/react"
+import { cn } from "@workspace/ui/lib/utils"
 
 type ImagePosition = {
-  src: string;
+  src: string
   position:
     | "top-left"
     | "top-right"
@@ -19,10 +19,10 @@ type ImagePosition = {
     | "bottom-left"
     | "bottom-right"
     | "far-left"
-    | "far-right";
-  depth: number;
-  delay: number;
-};
+    | "far-right"
+  depth: number
+  delay: number
+}
 
 const positionStyles: Record<
   ImagePosition["position"],
@@ -36,7 +36,7 @@ const positionStyles: Record<
   "bottom-right": { top: "68%", right: "4%" },
   "far-left": { top: "52%", left: "2%" },
   "far-right": { top: "52%", right: "2%" },
-};
+}
 
 const positionOrder: ImagePosition["position"][] = [
   "top-left",
@@ -47,22 +47,22 @@ const positionOrder: ImagePosition["position"][] = [
   "bottom-right",
   "far-left",
   "far-right",
-];
+]
 
-type DepthVariant = "default" | "edge-focus";
+type DepthVariant = "default" | "edge-focus"
 
 const depthValuesByVariant: Record<DepthVariant, number[]> = {
   default: [0.3, 0.35, 0.9, 0.85, 0.4, 0.45, 0.25, 0.2],
   "edge-focus": [0.85, 0.9, 0.3, 0.35, 0.8, 0.85, 0.4, 0.45],
-};
+}
 
-const SPRING_CONFIG = { damping: 25, stiffness: 120 };
+const SPRING_CONFIG = { damping: 25, stiffness: 120 }
 
 export interface ParallaxHeroImagesProps {
-  images: string[];
-  className?: string;
-  imageClassName?: string;
-  variant?: DepthVariant;
+  images: string[]
+  className?: string
+  imageClassName?: string
+  variant?: DepthVariant
 }
 
 export const ParallaxHeroImages = ({
@@ -71,40 +71,40 @@ export const ParallaxHeroImages = ({
   imageClassName,
   variant = "default",
 }: ParallaxHeroImagesProps) => {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
 
-  const smoothMouseX = useSpring(mouseX, SPRING_CONFIG);
-  const smoothMouseY = useSpring(mouseY, SPRING_CONFIG);
+  const smoothMouseX = useSpring(mouseX, SPRING_CONFIG)
+  const smoothMouseY = useSpring(mouseY, SPRING_CONFIG)
 
   const positions = useMemo(() => {
-    const limitedImages = images.slice(0, 8);
-    const depthValues = depthValuesByVariant[variant];
+    const limitedImages = images.slice(0, 8)
+    const depthValues = depthValuesByVariant[variant]
     return limitedImages.map((src, index) => ({
       src,
       position: positionOrder[index],
       depth: depthValues[index],
       delay: index * 0.12,
-    }));
-  }, [images, variant]);
+    }))
+  }, [images, variant])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth) * 2 - 1;
-      const y = (e.clientY / window.innerHeight) * 2 - 1;
-      mouseX.set(x);
-      mouseY.set(y);
-    };
+      const x = (e.clientX / window.innerWidth) * 2 - 1
+      const y = (e.clientY / window.innerHeight) * 2 - 1
+      mouseX.set(x)
+      mouseY.set(y)
+    }
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [mouseX, mouseY]);
+    window.addEventListener("mousemove", handleMouseMove)
+    return () => window.removeEventListener("mousemove", handleMouseMove)
+  }, [mouseX, mouseY])
 
   return (
     <div
       className={cn(
         "pointer-events-none absolute inset-0 overflow-hidden",
-        className,
+        className
       )}
     >
       {positions.map((pos, index) => (
@@ -120,13 +120,13 @@ export const ParallaxHeroImages = ({
         />
       ))}
     </div>
-  );
-};
+  )
+}
 
 interface ParallaxImageProps extends ImagePosition {
-  imageClassName?: string;
-  smoothMouseX: MotionValue<number>;
-  smoothMouseY: MotionValue<number>;
+  imageClassName?: string
+  smoothMouseX: MotionValue<number>
+  smoothMouseY: MotionValue<number>
 }
 
 const ParallaxImage = memo(function ParallaxImage({
@@ -138,21 +138,21 @@ const ParallaxImage = memo(function ParallaxImage({
   smoothMouseX,
   smoothMouseY,
 }: ParallaxImageProps) {
-  const maxOffset = 40;
+  const maxOffset = 40
 
   const translateX = useTransform(
     smoothMouseX,
     [-1, 1],
-    [-maxOffset * depth, maxOffset * depth],
-  );
+    [-maxOffset * depth, maxOffset * depth]
+  )
 
   const translateY = useTransform(
     smoothMouseY,
     [-1, 1],
-    [-maxOffset * depth, maxOffset * depth],
-  );
+    [-maxOffset * depth, maxOffset * depth]
+  )
 
-  const posStyle = positionStyles[position];
+  const posStyle = positionStyles[position]
 
   return (
     <motion.div
@@ -180,9 +180,9 @@ const ParallaxImage = memo(function ParallaxImage({
         decoding="async"
         className={cn(
           "aspect-4/3 h-20 w-32 rounded-lg object-cover shadow-sm ring-1 ring-black/10 sm:h-40 sm:w-56 md:h-52 md:w-80 dark:ring-white/10",
-          imageClassName,
+          imageClassName
         )}
       />
     </motion.div>
-  );
-});
+  )
+})
