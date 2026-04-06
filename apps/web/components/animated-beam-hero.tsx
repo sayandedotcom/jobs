@@ -162,6 +162,36 @@ const sourceIcons: SourceIcon[] = [
     svg: "/integration-logos/workable.jpeg",
     tooltip: "Workable",
   },
+  {
+    id: "linkedin",
+    svg: "/integration-logos/linkedin.png",
+    tooltip: "LinkedIn",
+    index: 17,
+  },
+  {
+    id: "indeed",
+    svg: "/integration-logos/indeed.jpeg",
+    tooltip: "Indeed",
+    index: 18,
+  },
+  {
+    id: "googlejobs",
+    svg: "/integration-logos/google-jobs.jpeg",
+    tooltip: "Google Jobs",
+    index: 19,
+  },
+  {
+    id: "4daysweek",
+    svg: "/integration-logos/4days-week.png",
+    tooltip: "4 Days Week",
+    index: 20,
+  },
+  {
+    id: "web3career",
+    svg: "/integration-logos/web3-career.jpeg",
+    tooltip: "Web3 Career",
+    index: 21,
+  },
 ]
 
 interface NodeConfig {
@@ -270,7 +300,7 @@ export function AnimatedBeamHero({
           ref={(el) => {
             nodeRefs.current[node.id] = el
           }}
-          className={cn("absolute", node.position)}
+          className={cn("absolute cursor-pointer", node.position)}
           tooltip={node.source.tooltip}
         >
           <Image
