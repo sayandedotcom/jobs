@@ -6,6 +6,7 @@ import { siteConfig } from "@/lib/site-config"
 import { Button } from "@workspace/ui/components/button"
 import { AnimatedBeamHero } from "@/components/animated-beam-hero"
 import { Bot } from "lucide-react"
+import { LightRays } from "@workspace/ui/components/light-rays"
 
 export function Hero() {
   const signIn = () =>
@@ -26,13 +27,8 @@ export function Hero() {
               {siteConfig.name}
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={signIn}
-            className="cursor-pointer border-white/10 bg-white/5 text-white hover:bg-white/10"
-          >
-            Sign in with Google
+          <Button onClick={signIn} className="cursor-pointer">
+            Sign In
           </Button>
         </div>
       </header>
@@ -40,6 +36,7 @@ export function Hero() {
       <main className="flex flex-1 flex-col gap-6">
         <section className="bg-grid-white/[0.02] relative w-full overflow-hidden bg-black/[0.96] antialiased md:flex md:items-center md:justify-center">
           {/* <Spotlight /> */}
+          <LightRays />
           <div className="relative z-10 mx-auto w-full px-4 md:px-0">
             <AnimatedBeamHero
               heading={siteConfig.hero.heading}
