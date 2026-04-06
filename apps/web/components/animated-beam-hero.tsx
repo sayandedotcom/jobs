@@ -4,38 +4,170 @@ import { AnimatedBeam } from "@workspace/ui/components/animated-beam"
 import { BorderBeam } from "@workspace/ui/components/border-beam"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
+import { AnimatePresence, motion } from "motion/react"
 import Image from "next/image"
-import React, { forwardRef, useRef } from "react"
+import React, { forwardRef, useRef, useState } from "react"
 
 const Square = forwardRef<
   HTMLDivElement,
-  { className?: string; children?: React.ReactNode }
->(({ className, children }, ref) => {
+  {
+    className?: string
+    children?: React.ReactNode
+    tooltip?: string
+  }
+>(({ className, children, tooltip }, ref) => {
+  const [show, setShow] = useState(false)
+
   return (
     <div
-      ref={ref}
-      className={cn(
-        "relative z-10 flex size-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black shadow-[0_0_20px_-12px_rgba(255,255,255,0.3)] md:size-14",
-        className
-      )}
+      className={cn("group relative", className)}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
     >
-      {children}
-      <BorderBeam
-        size={40}
-        duration={4}
-        colorFrom="#e0e0e0"
-        colorTo="#ffffff"
-        borderWidth={1.5}
-      />
+      <AnimatePresence>
+        {show && tooltip && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.85 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="absolute -top-10 left-1/2 z-50 -translate-x-1/2 rounded-md bg-black px-3 py-1.5 text-xs font-medium whitespace-nowrap text-white shadow-xl"
+          >
+            {tooltip}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div
+        ref={ref}
+        className={cn(
+          "relative z-10 flex size-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white shadow-[0_0_20px_-12px_rgba(255,255,255,0.3)] md:size-14"
+        )}
+      >
+        {children}
+        <BorderBeam
+          size={40}
+          duration={4}
+          colorFrom="#e0e0e0"
+          colorTo="#ffffff"
+          borderWidth={1.5}
+        />
+      </div>
     </div>
   )
 })
 
 Square.displayName = "Square"
 
+interface SourceIcon {
+  index: number
+  id: string
+  svg: string
+  tooltip: string
+}
+
+const sourceIcons: SourceIcon[] = [
+  {
+    index: 1,
+    id: "reddit",
+    svg: "/integration-logos/reddit.svg",
+    tooltip: "Reddit",
+  },
+  {
+    index: 2,
+    id: "x",
+    svg: "/integration-logos/x.jpeg",
+    tooltip: "X (Twitter)",
+  },
+  {
+    index: 3,
+    id: "ycombinator",
+    svg: "/integration-logos/y-combinator.svg",
+    tooltip: "Y Combinator",
+  },
+  {
+    index: 4,
+    id: "ashbyhq",
+    svg: "/integration-logos/ashbyhq.png",
+    tooltip: "Ashby HQ",
+  },
+  {
+    index: 5,
+    id: "greenhouse",
+    svg: "/integration-logos/greenhouse.jpeg",
+    tooltip: "Greenhouse",
+  },
+  {
+    index: 6,
+    id: "lever",
+    svg: "/integration-logos/lever.jpeg",
+    tooltip: "Lever",
+  },
+  {
+    index: 7,
+    id: "smartrecruiters",
+    svg: "/integration-logos/smartrecruiters.svg",
+    tooltip: "Smart Recruiters",
+  },
+  {
+    index: 8,
+    id: "weworkremotely",
+    svg: "/integration-logos/weworkremotely.png",
+    tooltip: "We Work Remotely",
+  },
+  {
+    index: 9,
+    id: "wellfound",
+    svg: "/integration-logos/wellfound.jpeg",
+    tooltip: "Wellfound",
+  },
+  {
+    index: 10,
+    id: "remoteok",
+    svg: "/integration-logos/remoteok.jpeg",
+    tooltip: "Remote OK",
+  },
+  {
+    index: 11,
+    id: "remotive",
+    svg: "/integration-logos/remotive.jpeg",
+    tooltip: "Remotive",
+  },
+  {
+    index: 12,
+    id: "arbeitnow",
+    svg: "/integration-logos/arbeitnow.png",
+    tooltip: "Arbeitnow",
+  },
+  {
+    index: 13,
+    id: "himalayas",
+    svg: "/integration-logos/himalayas.jpeg",
+    tooltip: "Himalayas",
+  },
+  {
+    index: 14,
+    id: "jobicy",
+    svg: "/integration-logos/jobicy.png",
+    tooltip: "Jobicy",
+  },
+  {
+    index: 15,
+    id: "teamtailor",
+    svg: "/integration-logos/teamtailor.jpeg",
+    tooltip: "Teamtailor",
+  },
+  {
+    index: 16,
+    id: "workable",
+    svg: "/integration-logos/workable.jpeg",
+    tooltip: "Workable",
+  },
+]
+
 interface NodeConfig {
   id: string
   position: string
+  source: SourceIcon
 }
 
 interface BeamConfig {
@@ -45,24 +177,33 @@ interface BeamConfig {
   endYOffset?: number
 }
 
-const nodes: NodeConfig[] = [
-  { id: "n1", position: "top-[8%] left-[8%]" },
-  { id: "n2", position: "top-[6%] left-[25%]" },
-  { id: "n3", position: "top-[6%] left-[42%]" },
-  { id: "n4", position: "top-[10%] right-[10%]" },
-  { id: "n5", position: "top-[10%] right-[28%]" },
-  { id: "n6", position: "top-[38%] left-[8%]" },
-  { id: "n7", position: "top-[38%] right-[8%]" },
-  { id: "n8", position: "bottom-[12%] left-[8%]" },
-  { id: "n9", position: "bottom-[10%] left-[22%]" },
-  { id: "n10", position: "bottom-[10%] left-[40%]" },
-  { id: "n11", position: "bottom-[8%] right-[12%]" },
-  { id: "n12", position: "bottom-[8%] right-[28%]" },
-  { id: "n13", position: "top-[22%] left-[20%]" },
-  { id: "n14", position: "top-[24%] right-[20%]" },
-  { id: "n15", position: "bottom-[24%] left-[18%]" },
-  { id: "n16", position: "bottom-[26%] right-[22%]" },
-]
+const nodes: NodeConfig[] = Array.from({ length: 21 }, (_, i) => ({
+  id: `n${i + 1}`,
+  position: [
+    "top-[8%] left-[8%]",
+    "top-[6%] left-[25%]",
+    "top-[6%] left-[42%]",
+    "top-[10%] right-[10%]",
+    "top-[10%] right-[28%]",
+    "top-[38%] left-[8%]",
+    "top-[38%] right-[8%]",
+    "bottom-[12%] left-[8%]",
+    "bottom-[10%] left-[22%]",
+    "bottom-[10%] left-[35%]",
+    "bottom-[8%] right-[12%]",
+    "bottom-[8%] right-[28%]",
+    "top-[22%] left-[20%]",
+    "top-[24%] right-[20%]",
+    "bottom-[29%] left-[18%]",
+    "bottom-[26%] right-[22%]",
+    "top-[14%] left-[58%]",
+    "bottom-[5%] left-[55%]",
+    "bottom-[18%] left-[48%]",
+    "top-[60%] left-[4%]",
+    "top-[60%] right-[10%]",
+  ][i]!,
+  source: sourceIcons[i % sourceIcons.length]!,
+}))
 
 const beams: BeamConfig[] = [
   { from: "n1", to: "center" },
@@ -81,6 +222,11 @@ const beams: BeamConfig[] = [
   { from: "n14", to: "center", reverse: true },
   { from: "n15", to: "center" },
   { from: "n16", to: "center", reverse: true },
+  { from: "n17", to: "center" },
+  { from: "n18", to: "center", reverse: true },
+  { from: "n19", to: "center" },
+  { from: "n20", to: "center", reverse: true },
+  { from: "n21", to: "center", reverse: true },
 ]
 
 const beamGradient = {
@@ -125,10 +271,11 @@ export function AnimatedBeamHero({
             nodeRefs.current[node.id] = el
           }}
           className={cn("absolute", node.position)}
+          tooltip={node.source.tooltip}
         >
           <Image
-            src="/svg/reddit.svg"
-            alt="Reddit"
+            src={node.source.svg}
+            alt={node.source.tooltip}
             width={40}
             height={40}
             className="size-full"
