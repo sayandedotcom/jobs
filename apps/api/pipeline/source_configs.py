@@ -13,6 +13,7 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "greenhouse": {},
     "lever": {},
     "ashbyhq": {},
+    "workable": {},
 }
 
 

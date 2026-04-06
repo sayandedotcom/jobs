@@ -10,3 +10,4 @@ import pipeline.sources.greenhouse  # noqa: F401
 import pipeline.sources.hackernews  # noqa: F401
 import pipeline.sources.lever  # noqa: F401
 import pipeline.sources.reddit  # noqa: F401
+import pipeline.sources.workable  # noqa: F401
