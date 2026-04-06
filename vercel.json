@@ -1,7 +1,7 @@
 {
   "installCommand": "pnpm install",
   "buildCommand": "turbo build",
-  "outputDirectory": "apps/web/.next",
+  "outputDirectory": ".next",
   "functions": {
     "apps/api/main.py": {
       "runtime": "python3.12",
