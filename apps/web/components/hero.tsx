@@ -4,7 +4,6 @@ import * as React from "react"
 import { authClient } from "@/lib/auth-client"
 import { siteConfig } from "@/lib/site-config"
 import { Button } from "@workspace/ui/components/button"
-import { Spotlight } from "@workspace/ui/components/ui/spotlight-new"
 import { AnimatedBeamHero } from "@/components/animated-beam-hero"
 import { Bot } from "lucide-react"
 

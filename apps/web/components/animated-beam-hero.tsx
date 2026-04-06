@@ -4,9 +4,71 @@ import { AnimatedBeam } from "@workspace/ui/components/animated-beam"
 import { BorderBeam } from "@workspace/ui/components/border-beam"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
-import { AnimatePresence, motion } from "motion/react"
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "motion/react"
 import Image from "next/image"
-import React, { forwardRef, useRef, useState } from "react"
+import React, { forwardRef, useEffect, useRef, useState } from "react"
+
+const SPRING_CONFIG = { damping: 25, stiffness: 120 }
+const MAX_OFFSET = 30
+
+const nodeDepths = [
+  0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.25, 0.9,
+  0.95, 0.2, 0.38, 0.42, 0.48, 0.52, 0.58,
+]
+
+function ParallaxNode({
+  node,
+  index,
+  smoothMouseX,
+  smoothMouseY,
+  onRef,
+}: {
+  node: NodeConfig
+  index: number
+  smoothMouseX: ReturnType<typeof useSpring>
+  smoothMouseY: ReturnType<typeof useSpring>
+  onRef: (el: HTMLDivElement | null) => void
+}) {
+  const depth = nodeDepths[index % nodeDepths.length]!
+  const tx = useTransform(
+    smoothMouseX,
+    [-1, 1],
+    [-MAX_OFFSET * depth, MAX_OFFSET * depth]
+  )
+  const ty = useTransform(
+    smoothMouseY,
+    [-1, 1],
+    [-MAX_OFFSET * depth, MAX_OFFSET * depth]
+  )
+
+  return (
+    <motion.div
+      className={cn("absolute", node.position)}
+      style={{ x: tx, y: ty }}
+    >
+      <Square
+        ref={onRef}
+        className="cursor-pointer"
+        tooltip={node.source.tooltip}
+        beamDelay={index * 0.8}
+      >
+        <Image
+          src={node.source.svg}
+          alt={node.source.tooltip}
+          width={40}
+          height={40}
+          className="size-full"
+        />
+      </Square>
+    </motion.div>
+  )
+}
 
 const Square = forwardRef<
   HTMLDivElement,
@@ -14,8 +76,9 @@ const Square = forwardRef<
     className?: string
     children?: React.ReactNode
     tooltip?: string
+    beamDelay?: number
   }
->(({ className, children, tooltip }, ref) => {
+>(({ className, children, tooltip, beamDelay = 0 }, ref) => {
   const [show, setShow] = useState(false)
 
   return (
@@ -37,20 +100,39 @@ const Square = forwardRef<
           </motion.div>
         )}
       </AnimatePresence>
-      <div
-        ref={ref}
-        className={cn(
-          "relative z-10 flex size-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white shadow-[0_0_20px_-12px_rgba(255,255,255,0.3)] md:size-14"
-        )}
-      >
-        {children}
+      <div className="relative rounded-[22px] border border-white/10 p-1">
         <BorderBeam
-          size={40}
-          duration={4}
-          colorFrom="#e0e0e0"
+          size={60}
+          duration={12}
+          delay={beamDelay + 4}
+          colorFrom="#ffffff"
           colorTo="#ffffff"
-          borderWidth={1.5}
+          borderWidth={1}
         />
+        <div className="relative rounded-[18px] border border-white/10 p-1">
+          <BorderBeam
+            size={45}
+            duration={7}
+            delay={beamDelay + 2}
+            colorFrom="#ffffff"
+            colorTo="#ffffff"
+            borderWidth={1}
+          />
+          <div
+            ref={ref}
+            className="relative z-10 flex size-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white shadow-[0_0_20px_-12px_rgba(255,255,255,0.3)] md:size-14"
+          >
+            {children}
+            <BorderBeam
+              size={35}
+              duration={5}
+              delay={beamDelay}
+              colorFrom="#ffffff"
+              colorTo="#ffffff"
+              borderWidth={1}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -289,28 +371,38 @@ export function AnimatedBeamHero({
   const centerRef = useRef<HTMLDivElement>(null)
   const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  const smoothMouseX = useSpring(mouseX, SPRING_CONFIG)
+  const smoothMouseY = useSpring(mouseY, SPRING_CONFIG)
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth) * 2 - 1
+      const y = (e.clientY / window.innerHeight) * 2 - 1
+      mouseX.set(x)
+      mouseY.set(y)
+    }
+    window.addEventListener("mousemove", handleMouseMove)
+    return () => window.removeEventListener("mousemove", handleMouseMove)
+  }, [mouseX, mouseY])
+
   return (
     <div
       className="relative min-h-[800px] w-full overflow-hidden"
       ref={containerRef}
     >
-      {nodes.map((node) => (
-        <Square
+      {nodes.map((node, i) => (
+        <ParallaxNode
           key={node.id}
-          ref={(el) => {
+          node={node}
+          index={i}
+          smoothMouseX={smoothMouseX}
+          smoothMouseY={smoothMouseY}
+          onRef={(el) => {
             nodeRefs.current[node.id] = el
           }}
-          className={cn("absolute cursor-pointer", node.position)}
-          tooltip={node.source.tooltip}
-        >
-          <Image
-            src={node.source.svg}
-            alt={node.source.tooltip}
-            width={40}
-            height={40}
-            className="size-full"
-          />
-        </Square>
+        />
       ))}
 
       <div
@@ -326,7 +418,7 @@ export function AnimatedBeamHero({
         <p className="relative z-10 mx-auto mt-4 max-w-lg text-center text-base font-normal text-neutral-300">
           {subheading}
         </p>
-        <div className="relative z-10 mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <div className="relative z-10 mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <Button
             size="lg"
             onClick={onCtaClick}
