@@ -11,6 +11,7 @@ SOURCE_CONFIGS: dict[str, dict] = {
     },
     "hackernews": {},
     "greenhouse": {},
+    "lever": {},
 }
 
 
