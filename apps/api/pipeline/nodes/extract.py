@@ -4,7 +4,7 @@ from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pipeline.state import ExtractedJob, PipelineState, RawPostData
 
-EXTRACTION_PROMPT = """You are a job posting extraction assistant. Given a Reddit post, extract structured job information.
+EXTRACTION_PROMPT = """You are a job posting extraction assistant. Given a post, extract structured job information.
 
 If the post is NOT a job posting (e.g., it's a discussion, question, or meta post), set is_job_posting to false.
 
@@ -25,6 +25,15 @@ Post content:
 
 
 async def extract_node(state: PipelineState) -> dict:
+    """LangGraph node: uses Gemini 2.0 Flash LLM to extract structured job data from posts.
+
+    Each filtered post is sent individually to the LLM with the extraction prompt.
+    The LLM returns JSON which is parsed into ExtractedJob. Only posts where
+    is_job_posting=true and title exists are kept.
+
+    Scalability concern: each post is a separate LLM call (sequential).
+    For high volume, consider batching or concurrent ainvoke calls with asyncio.gather.
+    """
     from core.config import settings
 
     llm = ChatGoogleGenerativeAI(

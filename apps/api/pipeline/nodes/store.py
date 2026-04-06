@@ -5,6 +5,17 @@ from pipeline.state import PipelineState
 
 
 async def store_node(state: PipelineState) -> dict:
+    """LangGraph node: persists new listings and cross-post mappings to PostgreSQL.
+
+    For new_listings:
+        1. INSERT into 'listings' table (title, company, description, etc.)
+        2. INSERT into 'raw_posts' linking to the new listing via listing_id
+
+    For matched_listings (semantic duplicates):
+        INSERT into 'raw_posts' linking to the existing listing_id (upsert on conflict).
+
+    Finally, updates the scan_runs row to status='completed' with aggregate stats.
+    """
     pool = await get_pool()
     jobs_added = 0
 

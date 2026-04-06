@@ -9,6 +9,14 @@ from pipeline.state import PipelineState
 
 
 def create_pipeline() -> StateGraph:
+    """Build the LangGraph StateGraph for the generic scan pipeline.
+
+    Linear flow:  fetch → filter → extract → dedup → store → END
+
+    Each node receives PipelineState and returns a partial dict to merge.
+    The graph is source-agnostic — the source_name in state determines which
+    registered BaseSource is used in the fetch node.
+    """
     graph = StateGraph(PipelineState)
     graph.add_node("fetch", fetch_node)
     graph.add_node("filter", filter_node)
@@ -27,13 +35,19 @@ def create_pipeline() -> StateGraph:
 
 
 async def run_pipeline(source_name: str, scan_run_id: str) -> dict:
+    """Compile and invoke the pipeline for a single source scan.
+
+    Args:
+        source_name: Must match a registered source (e.g., 'reddit', 'linkedin')
+        scan_run_id: DB row ID created by the scan trigger endpoint
+    """
     graph = create_pipeline()
     compiled = graph.compile()
     result = await compiled.ainvoke(
         {
             "source_name": source_name,
             "scan_run_id": scan_run_id,
-            "subreddits": [],
+            "sub_sources": [],
             "raw_posts": [],
             "filtered_posts": [],
             "extracted_jobs": [],

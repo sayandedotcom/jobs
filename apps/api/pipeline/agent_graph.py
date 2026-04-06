@@ -46,6 +46,28 @@ Respond with ONLY a JSON object:
 
 
 async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
+    """Per-agent pipeline: fetches from stale sources, dedupes, matches to agent profile.
+
+    This is a standalone procedural pipeline (not LangGraph) that:
+        1. Queries existing listings since the agent's last completed run
+        2. Identifies sources that haven't been scanned in STALE_THRESHOLD_HOURS
+        3. For each stale source: fetch → filter (agent-specific keywords) →
+           extract (LLM) → dedup (exact + embedding) → store
+        4. Combines pool + freshly fetched listing IDs
+        5. Filters out already-matched listings
+        6. Scores each remaining listing against the agent's profile via Gemini LLM
+        7. Stores matches with relevance_score >= 0.5 into agent_results
+
+    Note: This pipeline duplicates fetch/filter/extract/dedup/store logic from
+    the LangGraph pipeline (nodes/). Consider refactoring to share code when
+    adding more sources.
+
+    Scalability concerns:
+        - Each listing is scored with a separate LLM call (sequential)
+        - Each stale source is fetched sequentially
+        - _extract_jobs and _dedup_extracted_jobs also process items sequentially
+        - For high-volume agents, consider asyncio.gather() for parallel processing
+    """
     pool = await get_pool()
 
     skills = (
@@ -145,6 +167,7 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
 
 
 async def _query_existing_listings(since: datetime) -> list[str]:
+    """Return listing IDs created since the given timestamp (for pooling with fresh fetches)."""
     pool = await get_pool()
     rows = await pool.fetch(
         "SELECT id FROM listings WHERE created_at > $1 ORDER BY created_at DESC",
@@ -154,6 +177,11 @@ async def _query_existing_listings(since: datetime) -> list[str]:
 
 
 async def _get_stale_sources(sources: list[str]) -> list[str]:
+    """Identify sources that have no completed scan within STALE_THRESHOLD_HOURS.
+
+    Only stale sources are re-fetched to avoid redundant API calls.
+    Sources with a recent scan are assumed to have up-to-date data in the DB.
+    """
     pool = await get_pool()
     stale = []
     cutoff = datetime.now(UTC) - timedelta(hours=STALE_THRESHOLD_HOURS)
@@ -168,6 +196,12 @@ async def _get_stale_sources(sources: list[str]) -> list[str]:
 
 
 async def _fetch_for_source(source_name: str, agent: dict) -> list[dict]:
+    """Fetch raw posts from a single source using the registry + source_configs.
+
+    Uses the same source resolution as the LangGraph fetch_node:
+        get_source_config() → get_source() → source.fetch_new_posts()
+    Falls back to empty list on any error (source not found, API failure, etc.).
+    """
     pool = await get_pool()
 
     config = get_source_config(source_name)
@@ -196,6 +230,11 @@ async def _fetch_for_source(source_name: str, agent: dict) -> list[dict]:
 
 
 def _filter_posts(posts: list[dict], skills: list[str], job_title: str) -> list[dict]:
+    """Agent-specific keyword filter — uses the agent's skills + job title + base keywords.
+
+    Unlike the generic filter_node which uses static JOB_KEYWORDS, this builds
+    a dynamic keyword set tailored to the agent's profile for better recall.
+    """
     keywords = set(kw.lower() for kw in skills)
     keywords.add(job_title.lower())
     base_kw = [
@@ -228,6 +267,11 @@ def _filter_posts(posts: list[dict], skills: list[str], job_title: str) -> list[
 
 
 async def _extract_jobs(posts: list[dict]) -> list[tuple[dict, dict]]:
+    """LLM-based job extraction — same logic as nodes/extract.py but for the agent pipeline.
+
+    Each post is sent to Gemini 2.0 Flash individually (sequential).
+    Returns (post, extracted_job) pairs only for valid job postings.
+    """
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
         google_api_key=settings.GEMINI_API_KEY,
@@ -283,6 +327,13 @@ Post content:
 async def _dedup_extracted_jobs(
     jobs: list[tuple[dict, dict]],
 ) -> list[tuple[dict, dict]]:
+    """Two-stage dedup: exact external_id check + embedding cosine similarity.
+
+    Same logic as nodes/dedup.py:
+        1. Skip if external_id already exists in raw_posts
+        2. Compute embedding, compare against last 30 days of listings
+        3. Discard if cosine similarity >= SIMILARITY_THRESHOLD
+    """
     if not jobs:
         return jobs
 
@@ -336,6 +387,7 @@ async def _dedup_extracted_jobs(
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
+    """Pure-Python cosine similarity for comparing embedding vectors."""
     dot = sum(x * y for x, y in zip(a, b, strict=True))
     mag_a = sum(x * x for x in a) ** 0.5
     mag_b = sum(x * x for x in b) ** 0.5
@@ -345,6 +397,10 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
 
 
 async def _store_listings(jobs: list[tuple[dict, dict]], source_name: str) -> list[str]:
+    """Persist extracted jobs to listings + raw_posts tables, return new listing IDs.
+
+    Same logic as nodes/store.py but returns listing IDs for downstream matching.
+    """
     if not jobs:
         return []
 
@@ -412,6 +468,12 @@ async def _store_listings(jobs: list[tuple[dict, dict]], source_name: str) -> li
 async def _match_listings_to_agent(
     listing_ids: list[str], agent: dict, skills: list[str]
 ) -> list[tuple[str, float, str]]:
+    """Score each listing against the agent's profile using Gemini 2.0 Flash.
+
+    Sends the full MATCH_PROMPT with agent profile + listing details to the LLM.
+    Returns (listing_id, relevance_score, match_reason) tuples.
+    On LLM failure, assigns a default score of 0.5 ("Auto-matched").
+    """
     if not listing_ids:
         return []
 

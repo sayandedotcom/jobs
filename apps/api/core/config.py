@@ -2,6 +2,12 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    """Application settings loaded from environment variables / .env file.
+
+    When adding a new source (e.g., LinkedIn, Indeed), add its API credentials
+    as new fields here with empty string defaults.
+    """
+
     DATABASE_URL: str = ""
     REDDIT_CLIENT_ID: str = ""
     REDDIT_CLIENT_SECRET: str = ""

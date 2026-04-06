@@ -1,5 +1,8 @@
 from core.config import settings
 
+# Central config for all source constructors.
+# Each key must match the source's get_source_name() return value and the 'sources' DB table.
+# When adding a new source, add its env-var-backed kwargs here.
 SOURCE_CONFIGS: dict[str, dict] = {
     "reddit": {
         "client_id": settings.REDDIT_CLIENT_ID,
