@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { JobCard } from "@/components/job-card"
-import { JobFilters } from "@/components/job-filters"
+import { JobSearchBar, JobFilterPanel } from "@/components/job-filters"
 import { api, type Listing } from "@/lib/api-client"
 import { authClient } from "@/lib/auth-client"
 
@@ -41,61 +41,64 @@ export default function JobsPage() {
   const totalPages = Math.ceil(total / 20)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Jobs</h1>
-        <p className="text-muted-foreground text-sm">
-          {total} job{total !== 1 ? "s" : ""} found from Reddit and other
-          sources
-        </p>
+    <div className="flex flex-col gap-6">
+      <JobSearchBar search={search} onSearchChange={setSearch} />
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
+        <div className="flex flex-col gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Jobs</h1>
+            <p className="text-muted-foreground text-sm">
+              {total} job{total !== 1 ? "s" : ""} found
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="text-muted-foreground py-12 text-center">
+              Loading jobs...
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-muted-foreground py-12 text-center">
+              No jobs found. Try adjusting your filters.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {jobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-muted-foreground text-sm">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+
+        <JobFilterPanel
+          location={location}
+          jobType={jobType}
+          onLocationChange={setLocation}
+          onJobTypeChange={setJobType}
+        />
       </div>
-
-      <JobFilters
-        search={search}
-        location={location}
-        jobType={jobType}
-        onSearchChange={setSearch}
-        onLocationChange={setLocation}
-        onJobTypeChange={setJobType}
-      />
-
-      {loading ? (
-        <div className="text-muted-foreground py-12 text-center">
-          Loading jobs...
-        </div>
-      ) : jobs.length === 0 ? (
-        <div className="text-muted-foreground py-12 text-center">
-          No jobs found. Try adjusting your filters.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="text-muted-foreground text-sm">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
     </div>
   )
 }
