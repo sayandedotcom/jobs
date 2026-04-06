@@ -14,6 +14,7 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "lever": {},
     "ashbyhq": {},
     "workable": {},
+    "teamtailor": {},
 }
 
 
