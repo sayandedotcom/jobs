@@ -26,13 +26,15 @@ class BaseSource(ABC):
 
     @abstractmethod
     async def fetch_new_posts(
-        self, sub_sources: list[str], since: datetime | None = None
+        self, sub_sources: list[dict], since: datetime | None = None
     ) -> list[RawPostData]:
         """Fetch raw posts from the external source.
 
         Args:
-            sub_sources: Source-specific identifiers to fetch from
-                         (e.g., subreddit names for Reddit, board slugs for LinkedIn).
+            sub_sources: List of dicts with 'name' and 'type' keys, e.g.:
+                         [{'name': 'forhire', 'type': 'subreddit'},
+                          {'name': 'hiring remote', 'type': 'search'}]
+                         The 'type' field determines the fetch strategy within the source.
             since:       Only return posts newer than this timestamp (incremental fetch).
 
         Returns:

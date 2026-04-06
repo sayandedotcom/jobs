@@ -7,23 +7,31 @@ from pipeline.state import RawPostData
 
 
 @register_source
-class RedditSource(BaseSource):
-    """Fetches job postings from Reddit via the asyncpraw client.
+class RedditService(BaseSource):
+    """Unified Reddit service with multiple fetch strategies.
 
     Service details:
         - Uses the Reddit API (OAuth2) through asyncpraw
         - Requires a registered Reddit app: https://www.reddit.com/prefs/apps
         - API credentials: REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USER_AGENT
         - Rate limits: Reddit allows ~60 requests/min for OAuth2 apps
-        - Fetches up to 100 newest posts per subreddit (Reddit API 'new' endpoint)
-        - sub_sources for Reddit = subreddit names (e.g., 'forhire', 'remotejs')
+
+    Fetch strategies (selected via sub_source 'type' in DB):
+        - "subreddit": Fetches newest posts from configured subreddits
+                       sub_source.name = subreddit name (e.g., 'forhire', 'remotejs')
+        - "search":    Executes Reddit search queries across all subreddits
+                       sub_source.name = search query (e.g., 'hiring remote engineer')
 
     Scalability notes:
-        - Each subreddit fetch is a separate API call (sequential inside this class)
-        - For many subreddits, consider parallelizing with asyncio.gather()
+        - Each subreddit/query is a separate API call (sequential)
+        - For many sub_sources, consider parallelizing with asyncio.gather()
         - Reddit API pagination limit is 100 items per request
         - No retry/backoff logic currently — wrapped in try/finally only for cleanup
     """
+
+    SUBREDDIT_FETCH_LIMIT = 100
+    SEARCH_FETCH_LIMIT = 100
+    SEARCH_SORT = "new"
 
     def __init__(
         self,
@@ -42,42 +50,103 @@ class RedditSource(BaseSource):
         return "reddit"
 
     async def fetch_new_posts(
-        self, sub_sources: list[str], since: datetime | None = None
+        self,
+        sub_sources: list[dict],
+        since: datetime | None = None,
     ) -> list[RawPostData]:
-        # Initialize the asyncpraw Reddit client (unauthenticated "script" mode)
+        """Dispatch to the appropriate fetch strategy based on sub_source type.
+
+        Args:
+            sub_sources: List of dicts with 'name' and 'type' keys, e.g.:
+                         [{'name': 'forhire', 'type': 'subreddit'},
+                          {'name': 'hiring remote', 'type': 'search'}]
+            since:       Only return posts newer than this timestamp (incremental fetch).
+
+        Returns:
+            Deduplicated list of RawPostData (deduped by external_id).
+        """
         reddit = asyncpraw.Reddit(
             client_id=self.client_id,
             client_secret=self.client_secret,
             user_agent=self.user_agent,
         )
+        seen_ids: set[str] = set()
         posts: list[RawPostData] = []
         try:
-            # Iterate through each subreddit configured in the 'sub_sources' DB table
-            for subreddit_name in sub_sources:
-                subreddit = await reddit.subreddit(subreddit_name)
-                # Fetch up to 100 newest submissions (Reddit API pagination limit)
-                async for submission in subreddit.new(limit=100):
-                    created_at = datetime.fromtimestamp(submission.created_utc, tz=UTC)
-                    # Skip posts older than the last successful scan (incremental fetch)
-                    if since and created_at < since:
-                        continue
-                    # Build a normalized content string from the submission fields
-                    content = self._build_content(submission)
-                    # Prefix external_id with 'reddit_' to namespace across sources
-                    posts.append(
-                        {
-                            "external_id": f"reddit_{submission.id}",
-                            "raw_content": content,
-                            "permalink": f"https://reddit.com{submission.permalink}",
-                            "author": str(submission.author)
-                            if submission.author
-                            else None,
-                            "posted_at": created_at.isoformat(),
-                        }
-                    )
+            for sub in sub_sources:
+                name = sub["name"]
+                sub_type = sub.get("type", "subreddit")
+
+                if sub_type == "search":
+                    fetched = await self._fetch_by_search(reddit, name, since)
+                else:
+                    fetched = await self._fetch_by_subreddit(reddit, name, since)
+
+                for post in fetched:
+                    if post["external_id"] not in seen_ids:
+                        seen_ids.add(post["external_id"])
+                        posts.append(post)
         finally:
             # Always close the Reddit client to release the HTTP session
             await reddit.close()
+        return posts
+
+    async def _fetch_by_subreddit(
+        self, reddit: asyncpraw.Reddit, subreddit_name: str, since: datetime | None
+    ) -> list[RawPostData]:
+        """Fetch newest posts from a specific subreddit.
+
+        Uses the subreddit.new() endpoint which returns up to SUBREDDIT_FETCH_LIMIT
+        of the most recent submissions in chronological order.
+        """
+        posts: list[RawPostData] = []
+        subreddit = await reddit.subreddit(subreddit_name)
+        async for submission in subreddit.new(limit=self.SUBREDDIT_FETCH_LIMIT):
+            created_at = datetime.fromtimestamp(submission.created_utc, tz=UTC)
+            # Skip posts older than the last successful scan (incremental fetch)
+            if since and created_at < since:
+                continue
+            content = self._build_content(submission)
+            posts.append(
+                {
+                    "external_id": f"reddit_{submission.id}",
+                    "raw_content": content,
+                    "permalink": f"https://reddit.com{submission.permalink}",
+                    "author": str(submission.author) if submission.author else None,
+                    "posted_at": created_at.isoformat(),
+                }
+            )
+        return posts
+
+    async def _fetch_by_search(
+        self, reddit: asyncpraw.Reddit, query: str, since: datetime | None
+    ) -> list[RawPostData]:
+        """Execute a Reddit search query across all subreddits.
+
+        Uses reddit.search() with SEARCH_SORT='new' and SEARCH_FETCH_LIMIT.
+        Results include posts from any subreddit matching the query string,
+        providing broader coverage than subreddit-specific fetching.
+        """
+        posts: list[RawPostData] = []
+        async for submission in reddit.search(
+            query,
+            sort=self.SEARCH_SORT,
+            limit=self.SEARCH_FETCH_LIMIT,
+        ):
+            created_at = datetime.fromtimestamp(submission.created_utc, tz=UTC)
+            if since and created_at < since:
+                continue
+            content = self._build_content(submission)
+            # Prefix with 'reddit_s_' to distinguish search results from subreddit posts
+            posts.append(
+                {
+                    "external_id": f"reddit_{submission.id}",
+                    "raw_content": content,
+                    "permalink": f"https://reddit.com{submission.permalink}",
+                    "author": str(submission.author) if submission.author else None,
+                    "posted_at": created_at.isoformat(),
+                }
+            )
         return posts
 
     def _build_content(self, submission) -> str:

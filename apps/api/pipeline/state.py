@@ -42,7 +42,8 @@ class PipelineState(TypedDict):
     Fields:
         source_name:      The source to scan (must match a registered source name)
         scan_run_id:      DB row ID for tracking this scan run
-        sub_sources:      Source-specific channels (subreddit names, board slugs, etc.)
+        sub_sources:      Source-specific channels with type
+                          (e.g., [{'name': 'forhire', 'type': 'subreddit'}])
         raw_posts:        Posts returned by the source fetch
         filtered_posts:   Posts that passed keyword filtering
         extracted_jobs:   (RawPostData, ExtractedJob) pairs from LLM extraction
@@ -56,7 +57,7 @@ class PipelineState(TypedDict):
 
     source_name: str
     scan_run_id: str
-    sub_sources: list[str]
+    sub_sources: list[dict]
     raw_posts: list[RawPostData]
     filtered_posts: list[RawPostData]
     extracted_jobs: list[tuple[RawPostData, ExtractedJob]]

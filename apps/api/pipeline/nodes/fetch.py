@@ -26,10 +26,10 @@ async def fetch_node(state: PipelineState) -> dict:
         return {"raw_posts": [], "errors": state["errors"] + 1}
 
     rows = await pool.fetch(
-        "SELECT name FROM sub_sources WHERE source_id = (SELECT id FROM sources WHERE name = $1) AND is_active = true",
+        "SELECT name, type FROM sub_sources WHERE source_id = (SELECT id FROM sources WHERE name = $1) AND is_active = true",
         source_name,
     )
-    sub_sources = [row["name"] for row in rows]
+    sub_sources = [{"name": row["name"], "type": row["type"]} for row in rows]
     if not sub_sources:
         return {"raw_posts": [], "sub_sources": []}
 
