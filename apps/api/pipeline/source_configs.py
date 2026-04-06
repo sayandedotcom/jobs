@@ -9,8 +9,8 @@ SOURCE_CONFIGS: dict[str, dict] = {
         "client_secret": settings.REDDIT_CLIENT_SECRET,
         "user_agent": settings.REDDIT_USER_AGENT,
     },
-    # HackerNews requires no API keys — both Algolia and Firebase APIs are public
     "hackernews": {},
+    "greenhouse": {},
 }
 
 

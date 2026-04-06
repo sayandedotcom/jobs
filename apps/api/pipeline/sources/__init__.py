@@ -5,5 +5,6 @@ When adding a new source, add:
     import pipeline.sources.<module>  # noqa: F401
 """
 
+import pipeline.sources.greenhouse  # noqa: F401
 import pipeline.sources.hackernews  # noqa: F401
 import pipeline.sources.reddit  # noqa: F401
