@@ -136,6 +136,8 @@ model Listing {
   jobType       String?
   applyUrl      String?
   embeddingText String?
+  sourceName    String?
+  metadata      Json?
   postedAt      DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -147,6 +149,7 @@ model Listing {
   @@index([company])
   @@index([createdAt])
   @@index([jobType])
+  @@index([sourceName])
   @@map("listings")
 }
 
