@@ -19,13 +19,9 @@ async def trigger_scan(
 
     pool = await get_pool()
 
-    source_row = await pool.fetchrow(
-        "SELECT id FROM sources WHERE name = $1 AND is_active = true", source
-    )
+    source_row = await pool.fetchrow("SELECT id FROM sources WHERE name = $1", source)
     if not source_row:
-        raise HTTPException(
-            status_code=404, detail=f"Source '{source}' not found or inactive"
-        )
+        raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
 
     scan_row = await pool.fetchrow(
         """INSERT INTO scan_runs (source_name, status) VALUES ($1, 'running') RETURNING id""",
