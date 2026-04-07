@@ -5,7 +5,7 @@ description = "Jobs API - FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi[standard]>=0.115.0",
     "uvicorn[standard]>=0.34.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
