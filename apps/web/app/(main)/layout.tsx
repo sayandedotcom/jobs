@@ -11,7 +11,7 @@ export default async function MainLayout({
   const session = await auth.api.getSession({
     headers: await headers(),
   })
-  if (!session) redirect("/login")
+  if (!session) redirect("/")
 
   const user = {
     name: session.user?.name ?? "User",
