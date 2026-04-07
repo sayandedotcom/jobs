@@ -1,7 +1,8 @@
 import { getAuthenticatedUserId } from "@/lib/auth-server"
+import { env } from "@/env"
 import { prisma } from "@workspace/database"
 
-const PYTHON_API_URL = process.env.PYTHON_API_URL || "http://localhost:8000"
+const PYTHON_API_URL = env.PYTHON_API_URL
 
 export async function POST(
   _request: Request,
