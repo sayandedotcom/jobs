@@ -19,7 +19,7 @@ const MAX_OFFSET = 30
 
 const nodeDepths = [
   0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.25, 0.9,
-  0.95, 0.2, 0.38, 0.42, 0.48, 0.52, 0.58,
+  0.95, 0.2, 0.38, 0.42, 0.48, 0.52, 0.58, 0.33, 0.28, 0.44, 0.62, 0.37,
 ]
 
 function ParallaxNode({
@@ -55,6 +55,7 @@ function ParallaxNode({
       <Square
         ref={onRef}
         className="cursor-pointer"
+        // tooltip={`${node.id} - ${node.source.tooltip}`}
         tooltip={node.source.tooltip}
         beamDelay={index * 0.8}
       >
@@ -274,6 +275,36 @@ const sourceIcons: SourceIcon[] = [
     tooltip: "Web3 Career",
     index: 21,
   },
+  {
+    id: "remotefirstjobs",
+    svg: "/integration-logos/remotefirstjobs.svg",
+    tooltip: "Remote First Jobs",
+    index: 22,
+  },
+  {
+    id: "authenticjobs",
+    svg: "/integration-logos/authenticjobs.svg",
+    tooltip: "Authentic Jobs",
+    index: 23,
+  },
+  {
+    id: "workingnomads",
+    svg: "/integration-logos/workingnomads.png",
+    tooltip: "Working Nomads",
+    index: 24,
+  },
+  {
+    id: "remotewlb",
+    svg: "/integration-logos/remotewlb.svg",
+    tooltip: "Remote WLB",
+    index: 25,
+  },
+  {
+    id: "smashingmagazine",
+    svg: "/integration-logos/smashingmagazine.jpeg",
+    tooltip: "Smashing Magazine",
+    index: 26,
+  },
 ]
 
 interface NodeConfig {
@@ -289,33 +320,43 @@ interface BeamConfig {
   endYOffset?: number
 }
 
-const nodes: NodeConfig[] = Array.from({ length: 21 }, (_, i) => ({
-  id: `n${i + 1}`,
-  position: [
-    "top-[8%] left-[8%]",
-    "top-[6%] left-[25%]",
-    "top-[6%] left-[42%]",
-    "top-[10%] right-[10%]",
-    "top-[10%] right-[28%]",
-    "top-[38%] left-[8%]",
-    "top-[38%] right-[8%]",
-    "bottom-[12%] left-[8%]",
-    "bottom-[10%] left-[22%]",
-    "bottom-[10%] left-[35%]",
-    "bottom-[8%] right-[12%]",
-    "bottom-[8%] right-[28%]",
-    "top-[22%] left-[20%]",
-    "top-[24%] right-[20%]",
-    "bottom-[29%] left-[18%]",
-    "bottom-[26%] right-[22%]",
-    "top-[14%] left-[58%]",
-    "bottom-[5%] left-[55%]",
-    "bottom-[18%] left-[48%]",
-    "top-[60%] left-[4%]",
-    "top-[60%] right-[10%]",
-  ][i]!,
-  source: sourceIcons[i % sourceIcons.length]!,
-}))
+const positions: string[] = [
+  "top-[8%] left-[8%]", // n1
+  "top-[6%] left-[25%]", // n2
+  "top-[6%] left-[42%]", // n3
+  "top-[10%] right-[10%]", // n4
+  "top-[10%] right-[28%]", // n5
+  "top-[25%] left-[5%]", // n6
+  "top-[32%] right-[8%]", // n7
+  "bottom-[12%] left-[8%]", // n8
+  "bottom-[10%] left-[22%]", // n9
+  "bottom-[10%] left-[35%]", // n10
+  "bottom-[8%] right-[12%]", // n11
+  "bottom-[8%] right-[28%]", // n12
+  "top-[22%] left-[20%]", // n13
+  "top-[24%] right-[20%]", // n14
+  "bottom-[29%] left-[18%]", // n15
+  "bottom-[26%] right-[22%]", // n16
+  "top-[14%] left-[58%]", // n17
+  "bottom-[5%] left-[52%]", // n18
+  "bottom-[13%] left-[44%]", // n19
+  "top-[60%] left-[4%]", // n20
+  "top-[60%] right-[10%]", // n21
+  "top-[2%] right-[45%]", // n22
+  "top-[9%] right-[63%]", // n23
+  "bottom-[12%] left-[60%]", // n24
+  "top-[40%] left-[15%]", // n25
+  "bottom-[45%] right-[16%]", // n26
+]
+
+const nodes: NodeConfig[] = Array.from(
+  { length: positions.length },
+  (_, i) => ({
+    id: `n${i + 1}`,
+    position: positions[i]!,
+    source: sourceIcons[i % sourceIcons.length]!,
+  })
+)
 
 const beams: BeamConfig[] = [
   { from: "n1", to: "center" },
@@ -339,6 +380,11 @@ const beams: BeamConfig[] = [
   { from: "n19", to: "center" },
   { from: "n20", to: "center", reverse: true },
   { from: "n21", to: "center", reverse: true },
+  { from: "n22", to: "center" },
+  { from: "n23", to: "center", reverse: true },
+  { from: "n24", to: "center" },
+  { from: "n25", to: "center", reverse: true },
+  { from: "n26", to: "center" },
 ]
 
 const beamGradient = {
