@@ -282,8 +282,9 @@ async def list_agent_results(
     rows = await pool.fetch(
         """SELECT ar.*, l.id as l_id, l.title as l_title, l.company as l_company,
         l.description as l_description, l.location as l_location, l.salary as l_salary,
-        l.url as l_url, l.job_type as l_job_type, l.apply_url as l_apply_url,
-        l.posted_at as l_posted_at, l.created_at as l_created_at
+        l.url as l_url, l.job_type as l_job_type,         l.apply_url as l_apply_url,
+        l.posted_at as l_posted_at, l.created_at as l_created_at,
+        l.source_name as l_source_name, l.metadata as l_metadata
         FROM agent_results ar
         JOIN listings l ON l.id = ar.listing_id
         WHERE ar.agent_id = $1
@@ -316,6 +317,8 @@ async def list_agent_results(
                     applyUrl=row["l_apply_url"],
                     postedAt=row["l_posted_at"],
                     createdAt=row["l_created_at"],
+                    sourceName=row["l_source_name"],
+                    metadata=row["l_metadata"],
                 ),
             )
         )

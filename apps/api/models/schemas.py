@@ -13,6 +13,8 @@ class ListingResponse(BaseModel):
     url: str | None = None
     jobType: str | None = None
     applyUrl: str | None = None
+    sourceName: str | None = None
+    metadata: dict | None = None
     postedAt: datetime | None = None
     createdAt: datetime
     isSaved: bool = False

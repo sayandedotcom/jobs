@@ -17,8 +17,9 @@ async def list_saved_jobs(userId: str = Query(...)):
     rows = await pool.fetch(
         """SELECT usj.*, l.id as l_id, l.title as l_title, l.company as l_company,
         l.description as l_description, l.location as l_location, l.salary as l_salary,
-        l.url as l_url, l.job_type as l_job_type, l.apply_url as l_apply_url,
-        l.posted_at as l_posted_at, l.created_at as l_created_at
+        l.url as l_url, l.job_type as l_job_type,         l.apply_url as l_apply_url,
+        l.posted_at as l_posted_at, l.created_at as l_created_at,
+        l.source_name as l_source_name, l.metadata as l_metadata
         FROM user_saved_jobs usj
         JOIN listings l ON l.id = usj.listing_id
         WHERE usj.user_id = $1
@@ -45,6 +46,8 @@ async def list_saved_jobs(userId: str = Query(...)):
                     applyUrl=row["l_apply_url"],
                     postedAt=row["l_posted_at"],
                     createdAt=row["l_created_at"],
+                    sourceName=row["l_source_name"],
+                    metadata=row["l_metadata"],
                 ),
                 createdAt=row["created_at"],
             )
@@ -92,6 +95,8 @@ async def save_job(data: CreateSavedJob, userId: str = Query(...)):
             applyUrl=listing["apply_url"],
             postedAt=listing["posted_at"],
             createdAt=listing["created_at"],
+            sourceName=listing["source_name"],
+            metadata=listing["metadata"],
         ),
         createdAt=row["created_at"],
     )
@@ -153,6 +158,8 @@ async def update_saved_job(
             applyUrl=listing["apply_url"],
             postedAt=listing["posted_at"],
             createdAt=listing["created_at"],
+            sourceName=listing["source_name"],
+            metadata=listing["metadata"],
         ),
         createdAt=row["created_at"],
     )

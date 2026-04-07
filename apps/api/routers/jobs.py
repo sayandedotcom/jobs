@@ -74,6 +74,8 @@ async def list_jobs(
                 url=row["url"],
                 jobType=row["job_type"],
                 applyUrl=row["apply_url"],
+                sourceName=row["source_name"],
+                metadata=row["metadata"],
                 postedAt=row["posted_at"],
                 createdAt=row["created_at"],
                 isSaved=row.get("save_id") is not None if userId else False,
@@ -101,6 +103,8 @@ async def get_job(listing_id: str):
         url=row["url"],
         jobType=row["job_type"],
         applyUrl=row["apply_url"],
+        sourceName=row["source_name"],
+        metadata=row["metadata"],
         postedAt=row["posted_at"],
         createdAt=row["created_at"],
     )
