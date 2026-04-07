@@ -11,8 +11,9 @@ import {
   useSpring,
   useTransform,
 } from "motion/react"
-import Image from "next/image"
 import React, { forwardRef, useEffect, useRef, useState } from "react"
+import { source } from "@/config/source"
+import type { Source } from "@/config/source"
 
 const SPRING_CONFIG = { damping: 25, stiffness: 120 }
 const MAX_OFFSET = 30
@@ -53,21 +54,22 @@ function ParallaxNode({
       className={cn("absolute", node.position)}
       style={{ x: tx, y: ty }}
     >
-      <Square
-        ref={onRef}
-        className="cursor-pointer"
-        // tooltip={`${node.id} - ${node.source.tooltip}`}
-        tooltip={node.source.tooltip}
-        beamDelay={index * 0.8}
-      >
-        <Image
-          src={node.source.svg}
-          alt={node.source.tooltip}
-          width={40}
-          height={40}
-          className="size-full"
-        />
-      </Square>
+      <a href={node.source.url} target="_blank" rel="noopener noreferrer">
+        <Square
+          ref={onRef}
+          className="cursor-pointer"
+          tooltip={node.source.name}
+          beamDelay={index * 0.8}
+        >
+          <img
+            src={node.source.src}
+            alt={node.source.name}
+            width={40}
+            height={40}
+            className="size-full"
+          />
+        </Square>
+      </a>
     </motion.div>
   )
 }
@@ -142,183 +144,7 @@ const Square = forwardRef<
 
 Square.displayName = "Square"
 
-interface SourceIcon {
-  index: number
-  id: string
-  svg: string
-  tooltip: string
-}
-
-const sourceIcons: SourceIcon[] = [
-  {
-    index: 1,
-    id: "reddit",
-    svg: "/integration-logos/reddit.svg",
-    tooltip: "Reddit",
-  },
-  {
-    index: 2,
-    id: "x",
-    svg: "/integration-logos/x.jpeg",
-    tooltip: "X (Twitter)",
-  },
-  {
-    index: 3,
-    id: "ycombinator",
-    svg: "/integration-logos/y-combinator.svg",
-    tooltip: "Y Combinator",
-  },
-  {
-    index: 4,
-    id: "ashbyhq",
-    svg: "/integration-logos/ashbyhq.png",
-    tooltip: "Ashby HQ",
-  },
-  {
-    index: 5,
-    id: "greenhouse",
-    svg: "/integration-logos/greenhouse.jpeg",
-    tooltip: "Greenhouse",
-  },
-  {
-    index: 6,
-    id: "lever",
-    svg: "/integration-logos/lever.jpeg",
-    tooltip: "Lever",
-  },
-  {
-    index: 7,
-    id: "smartrecruiters",
-    svg: "/integration-logos/smartrecruiters.svg",
-    tooltip: "Smart Recruiters",
-  },
-  {
-    index: 8,
-    id: "weworkremotely",
-    svg: "/integration-logos/weworkremotely.png",
-    tooltip: "We Work Remotely",
-  },
-  {
-    index: 9,
-    id: "wellfound",
-    svg: "/integration-logos/wellfound.jpeg",
-    tooltip: "Wellfound",
-  },
-  {
-    index: 10,
-    id: "remoteok",
-    svg: "/integration-logos/remoteok.jpeg",
-    tooltip: "Remote OK",
-  },
-  {
-    index: 11,
-    id: "remotive",
-    svg: "/integration-logos/remotive.jpeg",
-    tooltip: "Remotive",
-  },
-  {
-    index: 12,
-    id: "arbeitnow",
-    svg: "/integration-logos/arbeitnow.png",
-    tooltip: "Arbeitnow",
-  },
-  {
-    index: 13,
-    id: "himalayas",
-    svg: "/integration-logos/himalayas.jpeg",
-    tooltip: "Himalayas",
-  },
-  {
-    index: 14,
-    id: "jobicy",
-    svg: "/integration-logos/jobicy.png",
-    tooltip: "Jobicy",
-  },
-  {
-    index: 15,
-    id: "teamtailor",
-    svg: "/integration-logos/teamtailor.jpeg",
-    tooltip: "Teamtailor",
-  },
-  {
-    index: 16,
-    id: "workable",
-    svg: "/integration-logos/workable.jpeg",
-    tooltip: "Workable",
-  },
-  {
-    id: "linkedin",
-    svg: "/integration-logos/linkedin.png",
-    tooltip: "LinkedIn",
-    index: 17,
-  },
-  {
-    id: "indeed",
-    svg: "/integration-logos/indeed.jpeg",
-    tooltip: "Indeed",
-    index: 18,
-  },
-  {
-    id: "googlejobs",
-    svg: "/integration-logos/google-jobs.jpeg",
-    tooltip: "Google Jobs",
-    index: 19,
-  },
-  {
-    id: "4daysweek",
-    svg: "/integration-logos/4days-week.png",
-    tooltip: "4 Days Week",
-    index: 20,
-  },
-  {
-    id: "web3career",
-    svg: "/integration-logos/web3-career.jpeg",
-    tooltip: "Web3 Career",
-    index: 21,
-  },
-  {
-    id: "remotefirstjobs",
-    svg: "/integration-logos/remotefirstjobs.svg",
-    tooltip: "Remote First Jobs",
-    index: 22,
-  },
-  {
-    id: "authenticjobs",
-    svg: "/integration-logos/authenticjobs.svg",
-    tooltip: "Authentic Jobs",
-    index: 23,
-  },
-  {
-    id: "workingnomads",
-    svg: "/integration-logos/workingnomads.png",
-    tooltip: "Working Nomads",
-    index: 24,
-  },
-  {
-    id: "remotewlb",
-    svg: "/integration-logos/remotewlb.svg",
-    tooltip: "Remote WLB",
-    index: 25,
-  },
-  {
-    id: "smashingmagazine",
-    svg: "/integration-logos/smashingmagazine.jpeg",
-    tooltip: "Smashing Magazine",
-    index: 26,
-  },
-  {
-    id: "recruitee",
-    svg: "/integration-logos/recruitee.jpeg",
-    tooltip: "Recruitee",
-    index: 27,
-  },
-  {
-    id: "jobvite",
-    svg: "/integration-logos/jobvite.jpeg",
-    tooltip: "Jobvite",
-    index: 28,
-  },
-]
+type SourceIcon = Source
 
 interface NodeConfig {
   id: string
@@ -369,7 +195,7 @@ const nodes: NodeConfig[] = Array.from(
   (_, i) => ({
     id: `n${i + 1}`,
     position: positions[i]!,
-    source: sourceIcons[i % sourceIcons.length]!,
+    source: source[i % source.length]!,
   })
 )
 
