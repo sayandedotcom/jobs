@@ -2,7 +2,11 @@
 
 import * as React from "react"
 import { JobCard, JobCardSkeleton } from "@/components/cards"
-import { JobSearchBar, JobFilterPanel } from "@/components/job-filters"
+import {
+  JobSearchBar,
+  JobFilterPanel,
+  sourceIdToSourceName,
+} from "@/components/job-filters"
 import { Button } from "@workspace/ui/components/button"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { api, type Listing } from "@/lib/api-client"
@@ -250,6 +254,7 @@ export default function JobsPage() {
   const [search, setSearch] = React.useState("")
   const [location, setLocation] = React.useState("")
   const [jobType, setJobType] = React.useState("all")
+  const [selectedSources, setSelectedSources] = React.useState<string[]>([])
 
   React.useEffect(() => {
     const fetchJobs = async () => {
@@ -276,6 +281,19 @@ export default function JobsPage() {
 
   const totalPages = Math.ceil(total / 20)
 
+  const filteredJobs = React.useMemo(() => {
+    const list = jobs.length > 0 ? jobs : FAKE_JOBS
+    if (selectedSources.length === 0) return list
+    return list.filter((job) => {
+      const sourceId = job.sourceName
+        ? sourceIdToSourceName(job.sourceName)
+        : null
+      return sourceId && selectedSources.includes(sourceId)
+    })
+  }, [jobs, selectedSources])
+
+  const displayTotal = selectedSources.length > 0 ? filteredJobs.length : total
+
   return (
     <div className="-mt-4 flex flex-col">
       <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pt-4 pb-2">
@@ -283,11 +301,11 @@ export default function JobsPage() {
         <p className="text-muted-foreground mt-3 text-sm">
           {loading
             ? "Searching for jobs..."
-            : `${total} job${total !== 1 ? "s" : ""} found`}
+            : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
           {loading ? (
             <div className="space-y-3">
@@ -295,9 +313,9 @@ export default function JobsPage() {
                 <JobCardSkeleton key={i} />
               ))}
             </div>
-          ) : jobs.length > 0 ? (
+          ) : filteredJobs.length > 0 ? (
             <div className="space-y-3">
-              {jobs.map((job) => (
+              {filteredJobs.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}
             </div>
@@ -340,8 +358,10 @@ export default function JobsPage() {
           <JobFilterPanel
             location={location}
             jobType={jobType}
+            selectedSources={selectedSources}
             onLocationChange={setLocation}
             onJobTypeChange={setJobType}
+            onSelectedSourcesChange={setSelectedSources}
           />
         </div>
       </div>

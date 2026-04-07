@@ -15,15 +15,47 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@workspace/ui/components/sidebar"
+import {
+  MultiSelect,
+  type MultiSelectOption,
+} from "@workspace/ui/components/multi-select"
 import { SearchIcon, MapPinIcon, BriefcaseIcon, XIcon } from "lucide-react"
+import { source } from "@/config/source"
+
+const SOURCE_ID_ALIASES: Record<string, string> = {
+  hackernews: "ycombinator",
+}
+
+const SOURCE_OPTIONS: MultiSelectOption[] = source
+  .filter((s) => s.active)
+  .map((s) => ({
+    value: s.id,
+    label: s.name,
+    icon: (
+      <img
+        src={s.src}
+        alt={s.name}
+        className="size-4 rounded-sm object-contain"
+      />
+    ),
+  }))
+
+function sourceIdToSourceName(sourceId: string): string {
+  for (const [alias, id] of Object.entries(SOURCE_ID_ALIASES)) {
+    if (id === sourceId) return alias
+  }
+  return sourceId
+}
 
 interface JobFiltersProps {
   search: string
   location: string
   jobType: string
+  selectedSources: string[]
   onSearchChange: (value: string) => void
   onLocationChange: (value: string) => void
   onJobTypeChange: (value: string) => void
+  onSelectedSourcesChange: (values: string[]) => void
 }
 
 function JobSearchBar({
@@ -51,17 +83,32 @@ function JobSearchBar({
 function JobFilterPanel({
   location,
   jobType,
+  selectedSources,
   onLocationChange,
   onJobTypeChange,
+  onSelectedSourcesChange,
 }: Omit<JobFiltersProps, "search" | "onSearchChange">) {
-  const hasFilters = location || (jobType && jobType !== "all")
+  const hasFilters =
+    location || (jobType && jobType !== "all") || selectedSources.length > 0
 
   return (
-    <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-64 shrink-0 flex-col overflow-hidden rounded-lg border">
+    <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-full shrink-0 flex-col overflow-hidden rounded-lg border">
       <SidebarContent className="gap-0">
         <SidebarGroup>
           <SidebarGroupLabel>Filters</SidebarGroupLabel>
           <SidebarGroupContent className="space-y-4 px-2 pb-2">
+            <div className="space-y-2">
+              <label className="text-sidebar-foreground/70 flex items-center gap-2 text-xs font-medium">
+                Source
+              </label>
+              <MultiSelect
+                options={SOURCE_OPTIONS}
+                selected={selectedSources}
+                onSelectedChange={onSelectedSourcesChange}
+                placeholder="All sources"
+              />
+            </div>
+
             <div className="space-y-2">
               <label className="text-sidebar-foreground/70 flex items-center gap-2 text-xs font-medium">
                 <MapPinIcon className="size-3.5" />
@@ -103,6 +150,7 @@ function JobFilterPanel({
                 onClick={() => {
                   onLocationChange("")
                   onJobTypeChange("all")
+                  onSelectedSourcesChange([])
                 }}
                 className="text-sidebar-foreground/70 hover:text-sidebar-foreground flex items-center gap-1.5 text-xs transition-colors"
               >
@@ -117,5 +165,5 @@ function JobFilterPanel({
   )
 }
 
-export { JobSearchBar, JobFilterPanel }
+export { JobSearchBar, JobFilterPanel, sourceIdToSourceName }
 export type { JobFiltersProps }
