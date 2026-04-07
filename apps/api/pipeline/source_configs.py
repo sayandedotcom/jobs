@@ -22,6 +22,14 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "weworkremotely": {
         "api_key": settings.WWR_API_KEY,
     },
+    "smartrecruiters": {},
+    "recruitee": {},
+    "arbeitnow": {},
+    "jobicy": {},
+    "workingnomads": {},
+    "remotewlb": {},
+    "authenticjobs": {},
+    "smashingjobs": {},
 }
 
 
