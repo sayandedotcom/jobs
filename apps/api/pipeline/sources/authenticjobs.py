@@ -197,6 +197,7 @@ class AuthenticjobsService(BaseSource):
                     "permalink": permalink,
                     "author": None,
                     "posted_at": posted_at,
+                    "metadata": {},
                 }
             )
 

@@ -218,6 +218,7 @@ class TeamtailorService(BaseSource):
                     "permalink": permalink,
                     "author": slug,
                     "posted_at": posted_at,
+                    "metadata": {},
                 }
             )
 

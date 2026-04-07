@@ -181,6 +181,7 @@ class AshbyHQService(BaseSource):
                     "permalink": permalink,
                     "author": slug,
                     "posted_at": posted_at,
+                    "metadata": {},
                 }
             )
 

@@ -150,4 +150,5 @@ class RemotiveService(BaseSource):
             "permalink": permalink,
             "author": company_name or None,
             "posted_at": posted_at,
+            "metadata": {},
         }

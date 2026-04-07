@@ -187,6 +187,11 @@ class HackerNewsService(BaseSource):
                         "permalink": f"https://news.ycombinator.com/item?id={object_id}",
                         "author": author or None,
                         "posted_at": posted_at,
+                        "metadata": {
+                            "points": hit.get("points", 0),
+                            "story_id": story_id,
+                            "parent_story_title": None,
+                        },
                     }
                 )
 
@@ -283,6 +288,10 @@ class HackerNewsService(BaseSource):
                     "permalink": f"https://news.ycombinator.com/item?id={job_id}",
                     "author": author or None,
                     "posted_at": posted_at,
+                    "metadata": {
+                        "points": item.get("score", 0),
+                        "title": title,
+                    },
                 }
             )
 

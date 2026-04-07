@@ -180,4 +180,5 @@ class SmartrecruitersService(BaseSource):
             "permalink": permalink,
             "author": company_name or company_id,
             "posted_at": posted_at,
+            "metadata": {},
         }

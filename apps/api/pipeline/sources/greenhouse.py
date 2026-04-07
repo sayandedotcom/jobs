@@ -142,6 +142,7 @@ class GreenhouseService(BaseSource):
                         "permalink": permalink,
                         "author": company,
                         "posted_at": posted_at,
+                        "metadata": {},
                     }
                 )
 

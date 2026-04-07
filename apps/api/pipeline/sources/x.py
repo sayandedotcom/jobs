@@ -31,7 +31,7 @@ class XService(BaseSource):
     API_BASE = "https://api.x.com/2"
     PAGE_SIZE = 100
     MAX_PAGES = 5
-    TWEET_FIELDS = "author_id,created_at,entities,referenced_tweets"
+    TWEET_FIELDS = "author_id,created_at,entities,referenced_tweets,public_metrics"
     USER_FIELDS = "username,name"
     EXPANSIONS = "author_id,referenced_tweets.id,referenced_tweets.id.author_id"
 
@@ -341,12 +341,22 @@ class XService(BaseSource):
             else f"https://x.com/i/web/status/{post_id}"
         )
 
+        metrics = item.get("public_metrics") or {}
+
         return {
             "external_id": f"x_{post_id}",
             "raw_content": "\n".join(raw_parts),
             "permalink": permalink,
             "author": username or display_name or None,
             "posted_at": created_at.isoformat() if created_at else None,
+            "metadata": {
+                "retweet_count": metrics.get("retweet_count", 0),
+                "like_count": metrics.get("like_count", 0),
+                "reply_count": metrics.get("reply_count", 0),
+                "quote_count": metrics.get("quote_count", 0),
+                "username": username,
+                "display_name": display_name,
+            },
         }
 
     def _build_lookup(self, items: Any) -> dict[str, dict[str, Any]]:

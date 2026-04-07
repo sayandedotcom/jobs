@@ -189,4 +189,5 @@ class RecruiteeService(BaseSource):
             "permalink": permalink,
             "author": company_name or slug,
             "posted_at": posted_at,
+            "metadata": {},
         }

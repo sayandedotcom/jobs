@@ -239,4 +239,5 @@ class RemotewlbService(BaseSource):
             "permalink": url or None,
             "author": None,
             "posted_at": None,
+            "metadata": {},
         }

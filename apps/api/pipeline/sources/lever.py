@@ -156,6 +156,7 @@ class LeverService(BaseSource):
                     "permalink": permalink or apply_url,
                     "author": company,
                     "posted_at": posted_at,
+                    "metadata": {},
                 }
             )
 
