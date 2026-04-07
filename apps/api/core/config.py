@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     REDDIT_USER_AGENT: str = "jobs-aggregator/0.1.0"
     GEMINI_API_KEY: str = ""
     CRON_SECRET: str = ""
+    WWR_API_KEY: str = ""
     CORS_ORIGINS: str = "http://localhost:3000"
     APP_URL: str = ""
     VERCEL_URL: str = ""

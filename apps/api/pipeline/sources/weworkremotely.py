@@ -1,5 +1,4 @@
 import re
-import xml.etree.ElementTree as ET
 from contextlib import suppress
 from datetime import datetime
 
@@ -11,7 +10,7 @@ from pipeline.state import RawPostData
 
 def _html_to_plain(html: str) -> str:
     text = html
-    for tag in ("</p>", "</li>", "</div>", "<br>", "<br/>>", "<br />"):
+    for tag in ("</p>", "</li>", "</div>", "<br>", "<br/>", "<br />"):
         text = text.replace(tag, "\n")
     text = re.sub(r"<[^>]+>", "", text)
     text = text.replace("&amp;", "&")
@@ -24,39 +23,39 @@ def _html_to_plain(html: str) -> str:
     return "\n".join(line for line in lines if line)
 
 
-RSS_FEEDS: dict[str, str] = {
-    "programming": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
-    "design": "https://weworkremotely.com/categories/remote-design-jobs.rss",
-    "devops-sysadmin": "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
-    "product": "https://weworkremotely.com/categories/remote-product-jobs.rss",
-    "customer-support": "https://weworkremotely.com/categories/remote-customer-support-jobs.rss",
-    "sales-marketing": "https://weworkremotely.com/categories/remote-sales-marketing-jobs.rss",
-    "copywriting": "https://weworkremotely.com/categories/remote-copywriting-jobs.rss",
-    "finance-legal": "https://weworkremotely.com/categories/remote-finance-legal-jobs.rss",
-    "management-executive": "https://weworkremotely.com/categories/remote-management-executive-jobs.rss",
-    "all": "https://weworkremotely.com/remote-jobs.rss",
+CATEGORY_MAP: dict[int, str] = {
+    1: "Design",
+    2: "Full-Stack Programming",
+    17: "Front-End Programming",
+    18: "Back-End Programming",
+    7: "Customer Support",
+    6: "DevOps and Sysadmin",
+    9: "Sales and Marketing",
+    3: "Management and Finance",
+    11: "Product",
+    4: "All Other Remote",
 }
 
 
 @register_source
 class WeworkremotelyService(BaseSource):
-    """WeWorkRemotely remote job board source using the public RSS feeds.
+    """WeWorkRemotely remote job board source using the authenticated JSON API.
 
     Service details:
-        - Category-specific RSS feeds at weworkremotely.com
-        - No API key required (free RSS access)
-        - Each RSS feed returns all active jobs in that category
-        - Title format: "{Company}: {Job Title}"
-        - Full HTML description included in each item
+        - GET https://weworkremotely.com/api/v1/remote-jobs
+        - Bearer token auth (1,000 requests/day)
+        - Supports ETag / If-None-Match for conditional requests
+        - Returns all active jobs with structured fields
+        - Email api@weworkremotely.com to request a token
 
     Fetch strategies (selected via sub_source 'type' in DB):
-        - "category": sub_source.name = category slug (e.g., "programming", "design")
-        - "browse":   sub_source.name = ignored (fetches all categories)
-
-    Available categories: programming, design, devops-sysadmin, product,
-    customer-support, sales-marketing, copywriting, finance-legal,
-    management-executive, all
+        - "browse": sub_source.name = ignored (fetches all jobs)
     """
+
+    API_URL = "https://weworkremotely.com/api/v1/remote-jobs"
+
+    def __init__(self, api_key: str = "") -> None:
+        self._api_key = api_key
 
     def get_source_name(self) -> str:
         return "weworkremotely"
@@ -69,112 +68,101 @@ class WeworkremotelyService(BaseSource):
         seen_ids: set[str] = set()
         posts: list[RawPostData] = []
         async with httpx.AsyncClient(timeout=30.0) as client:
-            for sub in sub_sources:
-                name = sub["name"]
-                sub_type = sub.get("type", "browse")
-
-                if sub_type == "category" and name in RSS_FEEDS:
-                    feeds = {name: RSS_FEEDS[name]}
-                else:
-                    feeds = RSS_FEEDS
-
-                for cat, url in feeds.items():
-                    fetched = await self._fetch_feed(client, cat, url, since)
-                    for post in fetched:
-                        if post["external_id"] not in seen_ids:
-                            seen_ids.add(post["external_id"])
-                            posts.append(post)
+            for _sub in sub_sources:
+                fetched = await self._fetch_all(client, since)
+                for post in fetched:
+                    if post["external_id"] not in seen_ids:
+                        seen_ids.add(post["external_id"])
+                        posts.append(post)
         return posts
 
-    async def _fetch_feed(
+    async def _fetch_all(
         self,
         client: httpx.AsyncClient,
-        category: str,
-        url: str,
         since: datetime | None,
     ) -> list[RawPostData]:
-        resp = await client.get(
-            url,
-            headers={"Accept": "application/rss+xml, application/xml, text/xml"},
-        )
+        headers = {"Authorization": f"Bearer {self._api_key}"}
+        resp = await client.get(self.API_URL, headers=headers)
         if resp.status_code != 200:
             return []
 
-        try:
-            root = ET.fromstring(resp.text)
-        except ET.ParseError:
+        data = resp.json()
+        if not isinstance(data, list):
             return []
 
         posts: list[RawPostData] = []
-
-        for item in root.iter("item"):
-            guid_el = item.find("guid")
-            guid = guid_el.text if guid_el is not None and guid_el.text else ""
-            if not guid:
+        for job in data:
+            if not isinstance(job, dict):
                 continue
 
-            external_id = f"wwr_{category}_{guid}"
-
-            pub_date = None
-            pub_el = item.find("pubDate")
-            if pub_el is not None and pub_el.text:
-                for fmt in (
-                    "%a, %d %b %Y %H:%M:%S %z",
-                    "%a, %d %b %Y %H:%M:%S %Z",
-                    "%Y-%m-%dT%H:%M:%S%z",
-                    "%Y-%m-%dT%H:%M:%SZ",
-                ):
-                    with suppress(ValueError):
-                        pub_date = datetime.strptime(pub_el.text, fmt)
-                        break
-
-            if since and pub_date and pub_date < since:
+            post = self._parse_job(job)
+            if post is None:
                 continue
 
-            title_el = item.find("title")
-            full_title = title_el.text if title_el is not None and title_el.text else ""
+            if since and post.get("posted_at"):
+                with suppress(ValueError, TypeError):
+                    posted = datetime.fromisoformat(post["posted_at"])
+                    if posted < since:
+                        continue
 
-            company_name = ""
-            position = full_title
-            if ": " in full_title:
-                company_name, position = full_title.split(": ", 1)
-
-            region_el = item.find("region")
-            region = region_el.text if region_el is not None and region_el.text else ""
-
-            cat_el = item.find("category")
-            job_category = cat_el.text if cat_el is not None and cat_el.text else ""
-
-            desc_el = item.find("description")
-            description_html = (
-                desc_el.text if desc_el is not None and desc_el.text else ""
-            )
-            description = _html_to_plain(description_html) if description_html else ""
-
-            link_el = item.find("link")
-            link = link_el.text if link_el is not None and link_el.text else ""
-
-            raw_parts = [f"Title: {position}"]
-            if company_name:
-                raw_parts.append(f"Company: {company_name}")
-            if region:
-                raw_parts.append(f"Region: {region}")
-            if job_category:
-                raw_parts.append(f"Category: {job_category}")
-            if description:
-                raw_parts.append(f"\n{description}")
-
-            posted_at = pub_date.isoformat() if pub_date else None
-            permalink = link or guid
-
-            posts.append(
-                {
-                    "external_id": external_id,
-                    "raw_content": "\n".join(raw_parts),
-                    "permalink": permalink,
-                    "author": company_name or None,
-                    "posted_at": posted_at,
-                }
-            )
+            posts.append(post)
 
         return posts
+
+    def _parse_job(self, job: dict) -> RawPostData | None:
+        job_id = job.get("id")
+        if not job_id:
+            return None
+
+        external_id = f"wwr_{job_id}"
+
+        title = job.get("title", "")
+        company_name = job.get("company", "")
+        description_html = job.get("description", "")
+        description = _html_to_plain(description_html) if description_html else ""
+
+        location = job.get("location", "")
+        region = job.get("region", "")
+        category_id = job.get("category_id")
+        category = CATEGORY_MAP.get(category_id, "") if category_id else ""
+        job_type = job.get("job_listing_type", "")
+        salary = job.get("salary_range", "")
+        url = job.get("url", "")
+
+        raw_parts = [f"Title: {title}"]
+        if company_name:
+            raw_parts.append(f"Company: {company_name}")
+        if location:
+            raw_parts.append(f"Location: {location}")
+        if region:
+            raw_parts.append(f"Region: {region}")
+        if category:
+            raw_parts.append(f"Category: {category}")
+        if job_type:
+            raw_parts.append(f"Type: {job_type}")
+        if salary and salary != "Prefer not to share":
+            raw_parts.append(f"Salary: {salary}")
+        if url:
+            raw_parts.append(f"Company URL: {url}")
+        if description:
+            raw_parts.append(f"\n{description}")
+
+        posted_at = None
+        created_str = job.get("created_at", "")
+        if created_str:
+            with suppress(ValueError, TypeError):
+                posted_at = datetime.fromisoformat(
+                    created_str.replace("Z", "+00:00")
+                ).isoformat()
+
+        permalink = (
+            f"https://weworkremotely.com/remote-jobs/{job_id}" if job_id else None
+        )
+
+        return {
+            "external_id": external_id,
+            "raw_content": "\n".join(raw_parts),
+            "permalink": permalink,
+            "author": company_name or None,
+            "posted_at": posted_at,
+        }

@@ -19,7 +19,9 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "remotefirstjobs": {},
     "remoteok": {},
     "remotive": {},
-    "weworkremotely": {},
+    "weworkremotely": {
+        "api_key": settings.WWR_API_KEY,
+    },
 }
 
 
