@@ -45,6 +45,8 @@ export interface Listing {
   url: string | null
   jobType: string | null
   applyUrl: string | null
+  sourceName: string | null
+  metadata: Record<string, unknown> | null
   postedAt: string | null
   createdAt: string
   isSaved: boolean
