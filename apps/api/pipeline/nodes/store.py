@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, UTC
 
 from core.database import get_pool
@@ -5,16 +6,17 @@ from pipeline.state import PipelineState
 
 
 async def store_node(state: PipelineState) -> dict:
-    """LangGraph node: persists new listings and cross-post mappings to PostgreSQL.
+    """Persist new listings and cross-post mappings to PostgreSQL.
 
     For new_listings:
-        1. INSERT into 'listings' table (title, company, description, etc.)
-        2. INSERT into 'raw_posts' linking to the new listing via listing_id
+        1. Derive title/company from raw_content
+        2. INSERT into 'listings' with source-specific metadata
+        3. INSERT into 'raw_posts' linking to the new listing
 
     For matched_listings (semantic duplicates):
-        INSERT into 'raw_posts' linking to the existing listing_id (upsert on conflict).
+        INSERT into 'raw_posts' linking to the existing listing (upsert on conflict).
 
-    Finally, updates the scan_runs row to status='completed' with aggregate stats.
+    Finally, updates the scan_runs row with aggregate stats.
     """
     pool = await get_pool()
     jobs_added = 0
@@ -28,7 +30,6 @@ async def store_node(state: PipelineState) -> dict:
 
     for item in state["new_listings"]:
         post = item["post"]
-        job = item["job"]
         posted_at = None
         if post.get("posted_at"):
             try:
@@ -36,20 +37,25 @@ async def store_node(state: PipelineState) -> dict:
             except (ValueError, TypeError):
                 posted_at = None
 
+        title = _derive_title(post["raw_content"])
+        company = post.get("author") or "Unknown"
+
         listing_row = await pool.fetchrow(
-            """INSERT INTO listings (title, company, description, location, salary, url, job_type, apply_url, posted_at, embedding_text)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            """INSERT INTO listings (title, company, description, location, salary, url, job_type, apply_url, posted_at, embedding_text, source_name, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING id""",
-            job["title"],
-            job["company"],
-            job["description"],
-            job.get("location"),
-            job.get("salary"),
+            title,
+            company,
+            post["raw_content"],
+            None,
+            None,
             post.get("permalink"),
-            job.get("job_type"),
-            job.get("apply_url"),
+            None,
+            None,
             posted_at,
             item["embedding_text"],
+            state["source_name"],
+            json.dumps(post.get("metadata", {})),
         )
         listing_id = listing_row["id"]
         jobs_added += 1
@@ -94,3 +100,12 @@ async def store_node(state: PipelineState) -> dict:
     )
 
     return {"jobs_added": jobs_added}
+
+
+def _derive_title(raw_content: str) -> str:
+    first_line = raw_content.split("\n", 1)[0].strip()
+    if first_line.startswith("Title:"):
+        first_line = first_line[len("Title:") :].strip()
+    if len(first_line) > 150:
+        return first_line[:147] + "..."
+    return first_line or "Untitled"

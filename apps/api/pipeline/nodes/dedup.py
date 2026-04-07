@@ -7,21 +7,15 @@ SIMILARITY_THRESHOLD = 0.92
 
 
 async def dedup_node(state: PipelineState) -> dict:
-    """LangGraph node: two-stage deduplication (exact + semantic) against existing listings.
+    """Two-stage deduplication (exact + semantic) against existing listings.
 
-    Stage 1 — Exact dedup:
+    Stage 1 - Exact dedup:
         Checks the raw_posts table for an existing external_id match.
-        If found, the post was already processed in a previous scan.
 
-    Stage 2 — Semantic dedup:
-        Computes an embedding for each new listing (title + company + location)
-        and compares it against all listings from the last 30 days using cosine
-        similarity. If score >= 0.92, the listing is considered a duplicate and
-        is mapped to the existing listing instead of creating a new one.
-
-    Returns:
-        new_listings:  posts + jobs that are truly new (to be inserted)
-        matched_listings: (external_id, existing_listing_id) pairs for cross-posts
+    Stage 2 - Semantic dedup:
+        Computes an embedding for each new post's raw_content and compares
+        against all listings from the last 30 days using cosine similarity.
+        If score >= 0.92, maps to the existing listing.
     """
     from core.config import settings
 
@@ -40,10 +34,10 @@ async def dedup_node(state: PipelineState) -> dict:
     )
     existing_embeddings = []
     if existing_rows:
-        texts = [r["embedding_text"] for r in existing_rows]
+        texts = [r["embedding_text"] or "" for r in existing_rows]
         existing_embeddings = await embeddings_model.aembed_documents(texts)
 
-    for post, job in state["extracted_jobs"]:
+    for post in state["filtered_posts"]:
         existing = await pool.fetchrow(
             "SELECT id FROM raw_posts WHERE external_id = $1",
             post["external_id"],
@@ -52,7 +46,7 @@ async def dedup_node(state: PipelineState) -> dict:
             continue
 
         posts_new += 1
-        embed_text = f"{job['title']} {job['company']} {job.get('location', '')}"
+        embed_text = post["raw_content"][:500]
         new_embedding = await embeddings_model.aembed_query(embed_text)
 
         best_score = 0.0
@@ -70,7 +64,6 @@ async def dedup_node(state: PipelineState) -> dict:
             new_listings.append(
                 {
                     "post": post,
-                    "job": job,
                     "embedding_text": embed_text,
                 }
             )
