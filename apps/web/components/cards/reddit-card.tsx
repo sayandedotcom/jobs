@@ -20,7 +20,12 @@ export function RedditCard({ job }: { job: Listing }) {
 
   return (
     <Card className="hover:bg-accent/50 transition-colors">
-      <a href={job.url || `/jobs/${job.id}`} className="block">
+      <a
+        href={job.url || `/jobs/${job.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block"
+      >
         <SourceBar
           sourceName={job.sourceName}
           saved={saved}
