@@ -14,5 +14,6 @@ import pipeline.sources.reddit  # noqa: F401
 import pipeline.sources.remotefirstjobs  # noqa: F401
 import pipeline.sources.remoteok  # noqa: F401
 import pipeline.sources.remotive  # noqa: F401
+import pipeline.sources.weworkremotely  # noqa: F401
 import pipeline.sources.teamtailor  # noqa: F401
 import pipeline.sources.workable  # noqa: F401

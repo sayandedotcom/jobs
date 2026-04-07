@@ -19,6 +19,7 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "remotefirstjobs": {},
     "remoteok": {},
     "remotive": {},
+    "weworkremotely": {},
 }
 
 

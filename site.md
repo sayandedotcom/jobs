@@ -54,7 +54,7 @@ Dialpad, Weights & Biases, Factorial, Attio, Tinybird, Clarity AI, Travelperk
 
 | #   | Source                                | URL                                                    | Method                                                                                                             | Auth               | Difficulty               | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --- | ------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 18  | **WeWorkRemotely**                    | https://weworkremotely.com                             | RSS per category (e.g. `/categories/remote-programming-jobs.rss`) OR API (`/api/v1/remote-jobs` with Bearer token) | RSS: No / API: Yes | LOW (RSS) / MEDIUM (API) | One of the largest remote job boards. RSS is free, no auth. API requires partner token (contact api@weworkremotely.com, 1000 req/day limit).                                                                                                                                                                                                                                                                                           |
+| 18  | **WeWorkRemotely** ✅                 | https://weworkremotely.com                             | RSS per category (e.g. `/categories/remote-programming-jobs.rss`) OR API (`/api/v1/remote-jobs` with Bearer token) | RSS: No / API: Yes | LOW (RSS) / MEDIUM (API) | One of the largest remote job boards. RSS is free, no auth. API requires partner token (contact api@weworkremotely.com, 1000 req/day limit).                                                                                                                                                                                                                                                                                           |
 | 19  | **RemoteOK** ✅                       | https://remoteok.com                                   | `https://remoteok.com/api`                                                                                         | No                 | LOW                      | Free public JSON API. Excellent for remote jobs. Single GET returns all jobs.                                                                                                                                                                                                                                                                                                                                                          |
 | 20  | **Remotive** ✅                       | https://remotive.com                                   | `https://remotive.com/api/remote-jobs`                                                                             | No                 | LOW                      | Free public JSON API.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 21  | **JobsCollider / RemoteFirstJobs** ✅ | https://remotefirstjobs.com / https://jobscollider.com | `GET https://remotefirstjobs.com/api/search-jobs?category={category}`                                              | No                 | LOW                      | **8,000+ jobs across 16 categories.** Updated every 10 min. Up to 500 jobs/category (5 pages x 100). 24hr delay. Must credit source. Structured JSON with title, company, salary, seniority, locations, description (HTML). Categories: software_development, cybersecurity, customer_service, design, marketing, sales, product, business, data, devops, finance_legal, human_resources, qa, writing, project_management, all_others. |
@@ -171,18 +171,18 @@ These don't list jobs directly but help discover jobs from across the web.
 
 ### Phase 1 — Immediate (LOW effort, HIGH value, no auth)
 
-| Priority | Source                  | Expected Volume    | Effort                                 |
-| -------- | ----------------------- | ------------------ | -------------------------------------- |
-| 1        | **JobsCollider API** ✅ | 8,000+ jobs        | Trivial — free JSON API, 16 categories |
-| 2        | **Greenhouse** ✅       | High (per company) | Low — build slug registry, fetch JSON  |
-| 3        | **Lever** ✅            | High (per company) | Low — same pattern as Greenhouse       |
-| 4        | **RemoteOK** ✅         | 1,000+ jobs        | Trivial — single GET request           |
-| 5        | **WeWorkRemotely RSS**  | 500+ jobs          | Trivial — parse XML                    |
-| 6        | **Remotive** ✅         | 1,000+ jobs        | Trivial — single GET request           |
-| 7        | **Arbeitnow**           | 1,000+ jobs        | Trivial — single GET request           |
-| 8        | **Jobicy**              | 500+ jobs          | Trivial — single GET request           |
-| 9        | **HN Who is Hiring** ✅ | 500-800/mo         | Low — Algolia API + LLM extraction     |
-| 10       | **Himalayas** ✅        | 500+ jobs          | Trivial — single GET request           |
+| Priority | Source                    | Expected Volume    | Effort                                 |
+| -------- | ------------------------- | ------------------ | -------------------------------------- |
+| 1        | **JobsCollider API** ✅   | 8,000+ jobs        | Trivial — free JSON API, 16 categories |
+| 2        | **Greenhouse** ✅         | High (per company) | Low — build slug registry, fetch JSON  |
+| 3        | **Lever** ✅              | High (per company) | Low — same pattern as Greenhouse       |
+| 4        | **RemoteOK** ✅           | 1,000+ jobs        | Trivial — single GET request           |
+| 5        | **WeWorkRemotely RSS** ✅ | 500+ jobs          | Trivial — parse XML                    |
+| 6        | **Remotive** ✅           | 1,000+ jobs        | Trivial — single GET request           |
+| 7        | **Arbeitnow**             | 1,000+ jobs        | Trivial — single GET request           |
+| 8        | **Jobicy**                | 500+ jobs          | Trivial — single GET request           |
+| 9        | **HN Who is Hiring** ✅   | 500-800/mo         | Low — Algolia API + LLM extraction     |
+| 10       | **Himalayas** ✅          | 500+ jobs          | Trivial — single GET request           |
 
 ### Phase 2 — Medium effort (paid or partial auth)
 
