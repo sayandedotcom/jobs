@@ -15,9 +15,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
 } from "@workspace/ui/components/sidebar"
 import { NavUser } from "@/components/nav-user"
 import { api } from "@/lib/api-client"
+import { siteConfig } from "@/lib/site-config"
 import {
   BotIcon,
   PlusCircleIcon,
@@ -75,21 +77,36 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              tooltip="JobAgg Agents"
-              render={<Link href="/dashboard" />}
-            >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <BotIcon className="size-4" />
+            <div className="flex items-center gap-2">
+              <SidebarMenuButton
+                size="lg"
+                tooltip={siteConfig.name}
+                render={<Link href="/dashboard" />}
+                className="flex-1 group-data-[collapsible=icon]:hidden"
+              >
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <BotIcon className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">
+                    {siteConfig.name}
+                  </span>
+                  <span className="truncate text-xs">
+                    {agentCount} agent{agentCount !== 1 ? "s" : ""} deployed
+                  </span>
+                </div>
+              </SidebarMenuButton>
+              <div className="group/icon relative hidden size-8 place-items-center group-data-[collapsible=icon]:grid">
+                <Link
+                  href="/dashboard"
+                  className="bg-sidebar-primary text-sidebar-primary-foreground col-start-1 row-start-1 flex size-8 items-center justify-center rounded-lg group-hover/icon:invisible"
+                >
+                  <BotIcon className="size-4" />
+                </Link>
+                <SidebarTrigger className="invisible col-start-1 row-start-1 cursor-pointer group-hover/icon:visible" />
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">JobAgg Agents</span>
-                <span className="truncate text-xs">
-                  {agentCount} agent{agentCount !== 1 ? "s" : ""} deployed
-                </span>
-              </div>
-            </SidebarMenuButton>
+              <SidebarTrigger className="shrink-0 cursor-pointer group-data-[collapsible=icon]:hidden" />
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
