@@ -15,6 +15,16 @@ async function main() {
     },
   })
 
+  await prisma.source.upsert({
+    where: { name: "x" },
+    update: {},
+    create: {
+      name: "x",
+      type: "x",
+      isActive: true,
+    },
+  })
+
   for (const name of subreddits) {
     await prisma.subSource.upsert({
       where: {

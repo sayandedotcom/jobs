@@ -30,6 +30,9 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "remotewlb": {},
     "authenticjobs": {},
     "smashingjobs": {},
+    "x": {
+        "bearer_token": settings.X_BEARER_TOKEN,
+    },
 }
 
 

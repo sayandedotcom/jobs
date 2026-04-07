@@ -25,3 +25,4 @@ import pipeline.sources.teamtailor  # noqa: F401
 import pipeline.sources.weworkremotely  # noqa: F401
 import pipeline.sources.workable  # noqa: F401
 import pipeline.sources.workingnomads  # noqa: F401
+import pipeline.sources.x  # noqa: F401

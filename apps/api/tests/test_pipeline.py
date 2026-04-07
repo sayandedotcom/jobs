@@ -7,7 +7,7 @@ async def test_pipeline_state_structure():
     state: PipelineState = {
         "source_name": "reddit",
         "scan_run_id": "test",
-        "subreddits": ["forhire"],
+        "sub_sources": [{"name": "forhire", "type": "subreddit"}],
         "raw_posts": [],
         "filtered_posts": [],
         "extracted_jobs": [],
@@ -19,5 +19,5 @@ async def test_pipeline_state_structure():
         "errors": 0,
     }
     assert state["source_name"] == "reddit"
-    assert state["subreddits"] == ["forhire"]
+    assert state["sub_sources"] == [{"name": "forhire", "type": "subreddit"}]
     assert state["errors"] == 0

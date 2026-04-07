@@ -18,7 +18,7 @@ async def test_filter_node_keeps_job_posts():
     state: PipelineState = {
         "source_name": "reddit",
         "scan_run_id": "test",
-        "subreddits": [],
+        "sub_sources": [],
         "raw_posts": [
             _make_post("[Hiring] Senior React Developer at Google"),
             _make_post("Looking for a remote Python engineer"),
@@ -46,7 +46,7 @@ async def test_filter_node_empty_input():
     state: PipelineState = {
         "source_name": "reddit",
         "scan_run_id": "test",
-        "subreddits": [],
+        "sub_sources": [],
         "raw_posts": [],
         "filtered_posts": [],
         "extracted_jobs": [],

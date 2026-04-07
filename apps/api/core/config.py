@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     REDDIT_CLIENT_ID: str = ""
     REDDIT_CLIENT_SECRET: str = ""
     REDDIT_USER_AGENT: str = "jobs-aggregator/0.1.0"
+    X_BEARER_TOKEN: str = ""
     GEMINI_API_KEY: str = ""
     CRON_SECRET: str = ""
     WWR_API_KEY: str = ""
