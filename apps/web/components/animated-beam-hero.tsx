@@ -20,6 +20,7 @@ const MAX_OFFSET = 30
 const nodeDepths = [
   0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.25, 0.9,
   0.95, 0.2, 0.38, 0.42, 0.48, 0.52, 0.58, 0.33, 0.28, 0.44, 0.62, 0.37, 0.5,
+  0.46,
 ]
 
 function ParallaxNode({
@@ -311,6 +312,12 @@ const sourceIcons: SourceIcon[] = [
     tooltip: "Recruitee",
     index: 27,
   },
+  {
+    id: "jobvite",
+    svg: "/integration-logos/jobvite.jpeg",
+    tooltip: "Jobvite",
+    index: 28,
+  },
 ]
 
 interface NodeConfig {
@@ -354,6 +361,7 @@ const positions: string[] = [
   "top-[40%] left-[15%]", // n25
   "bottom-[45%] right-[16%]", // n26
   "top-[42%] left-[5%]", // n27
+  "top-[4%] right-[20%]", // n28
 ]
 
 const nodes: NodeConfig[] = Array.from(
@@ -393,6 +401,7 @@ const beams: BeamConfig[] = [
   { from: "n25", to: "center", reverse: true },
   { from: "n26", to: "center" },
   { from: "n27", to: "center", reverse: true },
+  { from: "n28", to: "center" },
 ]
 
 const beamGradient = {
