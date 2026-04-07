@@ -11,7 +11,6 @@ async function main() {
     create: {
       name: "reddit",
       type: "reddit",
-      isActive: true,
     },
   })
 
@@ -21,7 +20,6 @@ async function main() {
     create: {
       name: "x",
       type: "x",
-      isActive: true,
     },
   })
 
@@ -37,7 +35,6 @@ async function main() {
       create: {
         sourceId: reddit.id,
         name,
-        isActive: true,
       },
     })
     console.log(`  Added subreddit: ${name}`)
