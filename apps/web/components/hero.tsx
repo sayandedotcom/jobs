@@ -7,6 +7,8 @@ import { Button } from "@workspace/ui/components/button"
 import { AnimatedBeamHero } from "@/components/animated-beam-hero"
 import { Bot } from "lucide-react"
 import { LightRays } from "@workspace/ui/components/light-rays"
+import { ShootingStars } from "@workspace/ui/components/shooting-stars"
+import { StarsBackground } from "@workspace/ui/components/stars-background"
 
 export function Hero() {
   const signIn = () =>
@@ -31,12 +33,13 @@ export function Hero() {
             Sign In
           </Button>
         </div>
+        <StarsBackground />
       </header>
 
       <main className="flex flex-1 flex-col gap-6">
         <section className="bg-grid-white/[0.02] relative w-full overflow-hidden bg-black/[0.96] antialiased md:flex md:items-center md:justify-center">
           {/* <Spotlight /> */}
-          <LightRays />
+          {/* <LightRays /> */}
           <div className="relative z-10 mx-auto w-full px-4 md:px-0">
             <AnimatedBeamHero
               heading={siteConfig.hero.heading}
@@ -52,6 +55,8 @@ export function Hero() {
               {siteConfig.hero.heading} {siteConfig.hero.headingHighlight}
             </h1>
           </div>
+          <ShootingStars />
+          <StarsBackground />
         </section>
 
         <section className="border-y border-white/10 bg-white/[0.02] px-6 py-12">
