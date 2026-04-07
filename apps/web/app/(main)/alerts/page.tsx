@@ -4,6 +4,7 @@ import * as React from "react"
 import { api, type SavedSearch } from "@/lib/api-client"
 import { authClient } from "@/lib/auth-client"
 import { Input } from "@workspace/ui/components/input"
+import { Separator } from "@workspace/ui/components/separator"
 
 export default function AlertsPage() {
   const { data: session } = authClient.useSession()
@@ -52,6 +53,7 @@ export default function AlertsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Saved Searches</h1>
+      <Separator />
 
       <form onSubmit={handleCreate} className="flex gap-3">
         <Input
