@@ -18,6 +18,7 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "himalayas": {},
     "remotefirstjobs": {},
     "remoteok": {},
+    "remotive": {},
 }
 
 
