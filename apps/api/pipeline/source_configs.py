@@ -17,6 +17,7 @@ SOURCE_CONFIGS: dict[str, dict] = {
     "teamtailor": {},
     "himalayas": {},
     "remotefirstjobs": {},
+    "remoteok": {},
 }
 
 
