@@ -20,25 +20,25 @@ export function RedditCard({ job }: { job: Listing }) {
 
   return (
     <Card className="hover:bg-accent/50 transition-colors">
+      <SourceBar
+        sourceName={job.sourceName}
+        saved={saved}
+        onSave={handleSave}
+      />
       <a
         href={job.url || `/jobs/${job.id}`}
         target="_blank"
         rel="noopener noreferrer"
         className="block"
       >
-        <SourceBar
-          sourceName={job.sourceName}
-          saved={saved}
-          onSave={handleSave}
-        />
         <CardHeader>
           <CardTitle className="leading-tight">{postTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <ShowMoreText text={job.description} />
         </CardContent>
-        <CardDateFooter date={job.postedAt} />
       </a>
+      <CardDateFooter date={job.postedAt} />
     </Card>
   )
 }
