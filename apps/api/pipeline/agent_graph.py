@@ -6,6 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 
 from core.config import settings
 from core.database import get_pool
+from core.utils import cuid
 from pipeline.source_configs import get_source_config
 from pipeline.sources.registry import get_source
 
@@ -55,10 +56,10 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
     )
 
     last_run = await pool.fetchrow(
-        "SELECT started_at FROM agent_runs WHERE agent_id = $1 AND status = 'completed' ORDER BY started_at DESC LIMIT 1",
+        """SELECT "startedAt" FROM agent_runs WHERE "agentId" = $1 AND status = 'completed' ORDER BY "startedAt" DESC LIMIT 1""",
         agent["id"],
     )
-    since = last_run["started_at"] if last_run else None
+    since = last_run["startedAt"] if last_run else None
 
     pool_listing_ids, fetched_listing_ids = [], []
     posts_scanned = 0
@@ -75,7 +76,7 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
             raw_posts.extend(posts)
 
         if raw_posts:
-            filtered = _filter_posts(raw_posts, skills, agent["job_title"])
+            filtered = _filter_posts(raw_posts, skills, agent["jobTitle"])
             deduped = await _dedup_posts(filtered)
             fetched_listing_ids = await _store_listings(
                 deduped, stale_sources[0] if stale_sources else "reddit"
@@ -87,9 +88,9 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
     )
 
     already_matched = {
-        r["listing_id"]
+        r["listingId"]
         for r in await pool.fetch(
-            "SELECT listing_id FROM agent_results WHERE agent_id = $1",
+            """SELECT "listingId" FROM agent_results WHERE "agentId" = $1""",
             agent["id"],
         )
     }
@@ -103,9 +104,10 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
         if score >= 0.5:
             new_jobs += 1
             await pool.execute(
-                """INSERT INTO agent_results (agent_id, listing_id, relevance_score, match_reason)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (agent_id, listing_id) DO NOTHING""",
+                """INSERT INTO agent_results (id, "agentId", "listingId", "relevanceScore", "matchReason")
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT ("agentId", "listingId") DO NOTHING""",
+                cuid(),
                 agent["id"],
                 listing_id,
                 score,
@@ -113,9 +115,9 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
             )
 
     now = datetime.now(UTC)
-    interval = agent["scan_interval_minutes"]
+    interval = agent["scanIntervalMinutes"]
     await pool.execute(
-        """UPDATE agent_runs SET status = 'completed', posts_scanned = $1, jobs_found = $2, new_jobs = $3, finished_at = $4
+        """UPDATE agent_runs SET status = 'completed', "postsScanned" = $1, "jobsFound" = $2, "newJobs" = $3, "finishedAt" = $4
         WHERE id = $5""",
         posts_scanned,
         jobs_found,
@@ -125,7 +127,7 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
     )
 
     await pool.execute(
-        """UPDATE agents SET last_run_at = $1, next_run_at = $2 WHERE id = $3""",
+        """UPDATE agents SET "lastRunAt" = $1, "nextRunAt" = $2 WHERE id = $3""",
         now,
         now + timedelta(minutes=interval),
         agent["id"],
@@ -141,7 +143,7 @@ async def run_agent_pipeline(agent: dict, run_id: str) -> dict:
 async def _query_existing_listings(since: datetime) -> list[str]:
     pool = await get_pool()
     rows = await pool.fetch(
-        "SELECT id FROM listings WHERE created_at > $1 ORDER BY created_at DESC",
+        """SELECT id FROM listings WHERE "createdAt" > $1 ORDER BY "createdAt" DESC""",
         since,
     )
     return [row["id"] for row in rows]
@@ -153,10 +155,10 @@ async def _get_stale_sources(sources: list[str]) -> list[str]:
     cutoff = datetime.now(UTC) - timedelta(hours=STALE_THRESHOLD_HOURS)
     for source_name in sources:
         last_scan = await pool.fetchrow(
-            "SELECT started_at FROM scan_runs WHERE source_name = $1 AND status = 'completed' ORDER BY started_at DESC LIMIT 1",
+            """SELECT "startedAt" FROM scan_runs WHERE "sourceName" = $1 AND status = 'completed' ORDER BY "startedAt" DESC LIMIT 1""",
             source_name,
         )
-        if not last_scan or last_scan["started_at"] < cutoff:
+        if not last_scan or last_scan["startedAt"] < cutoff:
             stale.append(source_name)
     return stale
 
@@ -170,7 +172,7 @@ async def _fetch_for_source(source_name: str, agent: dict) -> list[dict]:
         return []
 
     rows = await pool.fetch(
-        "SELECT name, type FROM sub_sources WHERE source_id = (SELECT id FROM sources WHERE name = $1)",
+        """SELECT name, type FROM sub_sources WHERE "sourceId" = (SELECT id FROM sources WHERE name = $1)""",
         source_name,
     )
     sub_sources = [{"name": row["name"], "type": row["type"]} for row in rows]
@@ -178,10 +180,10 @@ async def _fetch_for_source(source_name: str, agent: dict) -> list[dict]:
         return []
 
     last_run = await pool.fetchrow(
-        "SELECT started_at FROM agent_runs WHERE agent_id = $1 AND status = 'completed' ORDER BY started_at DESC LIMIT 1",
+        """SELECT "startedAt" FROM agent_runs WHERE "agentId" = $1 AND status = 'completed' ORDER BY "startedAt" DESC LIMIT 1""",
         agent["id"],
     )
-    since = last_run["started_at"] if last_run else None
+    since = last_run["startedAt"] if last_run else None
 
     try:
         return await source.fetch_new_posts(sub_sources, since)
@@ -222,7 +224,6 @@ def _filter_posts(posts: list[dict], skills: list[str], job_title: str) -> list[
 
 
 async def _dedup_posts(posts: list[dict]) -> list[dict]:
-    """Two-stage dedup: exact external_id check + embedding cosine similarity."""
     if not posts:
         return posts
 
@@ -231,7 +232,7 @@ async def _dedup_posts(posts: list[dict]) -> list[dict]:
 
     for post in posts:
         existing = await pool.fetchrow(
-            "SELECT id, listing_id FROM raw_posts WHERE external_id = $1",
+            """SELECT id, "listingId" FROM raw_posts WHERE "externalId" = $1""",
             post["external_id"],
         )
         if existing:
@@ -247,11 +248,11 @@ async def _dedup_posts(posts: list[dict]) -> list[dict]:
     )
 
     existing_rows = await pool.fetch(
-        "SELECT id, embedding_text FROM listings WHERE created_at > NOW() - INTERVAL '30 days'"
+        """SELECT id, "embeddingText" FROM listings WHERE "createdAt" > NOW() - INTERVAL '30 days'"""
     )
     existing_embeddings = []
     if existing_rows:
-        texts = [r["embedding_text"] or "" for r in existing_rows]
+        texts = [r["embeddingText"] or "" for r in existing_rows]
         existing_embeddings = await embeddings_model.aembed_documents(texts)
 
     unique = []
@@ -285,7 +286,6 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
 
 
 async def _store_listings(posts: list[dict], source_name: str) -> list[str]:
-    """Persist posts to listings + raw_posts tables, return new listing IDs."""
     if not posts:
         return []
 
@@ -301,12 +301,12 @@ async def _store_listings(posts: list[dict], source_name: str) -> list[str]:
 
     for post in posts:
         existing = await pool.fetchrow(
-            "SELECT id, listing_id FROM raw_posts WHERE external_id = $1",
+            """SELECT id, "listingId" FROM raw_posts WHERE "externalId" = $1""",
             post["external_id"],
         )
         if existing:
-            if existing["listing_id"]:
-                listing_ids.append(existing["listing_id"])
+            if existing["listingId"]:
+                listing_ids.append(existing["listingId"])
             continue
 
         embed_text = post["raw_content"][:500]
@@ -318,10 +318,11 @@ async def _store_listings(posts: list[dict], source_name: str) -> list[str]:
         title = title or "Untitled"
 
         listing_row = await pool.fetchrow(
-            """INSERT INTO listings (title, company, description, location, salary, url, job_type, apply_url, posted_at, embedding_text, source_name, metadata)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            """INSERT INTO listings (id, title, company, description, location, salary, url, "jobType", "applyUrl", "postedAt", "embeddingText", "sourceName", metadata)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             ON CONFLICT DO NOTHING
             RETURNING id""",
+            cuid(),
             title,
             post.get("author") or "Unknown",
             post["raw_content"],
@@ -345,8 +346,9 @@ async def _store_listings(posts: list[dict], source_name: str) -> list[str]:
                 except (ValueError, TypeError):
                     posted_at = None
             await pool.execute(
-                """INSERT INTO raw_posts (source_id, external_id, raw_content, permalink, author, posted_at, processed, listing_id)
-                VALUES ($1, $2, $3, $4, $5, $6, true, $7)""",
+                """INSERT INTO raw_posts (id, "sourceId", "externalId", "rawContent", permalink, author, "postedAt", processed, "listingId")
+                VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8)""",
+                cuid(),
                 source_id,
                 post["external_id"],
                 post["raw_content"],
@@ -382,14 +384,14 @@ async def _match_listings_to_agent(
 
         try:
             prompt = MATCH_PROMPT.format(
-                job_title=agent["job_title"],
+                job_title=agent["jobTitle"],
                 skills=", ".join(skills),
                 location=agent.get("location") or "Any",
-                open_to_relocate=str(agent.get("open_to_relocate", False)),
-                experience_level=agent.get("experience_level") or "Any",
-                salary_min=agent.get("salary_min") or "Any",
-                salary_max=agent.get("salary_max") or "Any",
-                job_type=agent.get("job_type") or "Any",
+                open_to_relocate=str(agent.get("openToRelocate", False)),
+                experience_level=agent.get("experienceLevel") or "Any",
+                salary_min=agent.get("salaryMin") or "Any",
+                salary_max=agent.get("salaryMax") or "Any",
+                job_type=agent.get("jobType") or "Any",
                 raw_content=listing["description"][:2000],
             )
             message = HumanMessage(content=prompt)

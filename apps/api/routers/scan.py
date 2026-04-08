@@ -1,7 +1,10 @@
+from datetime import datetime, UTC
+
 from fastapi import APIRouter, Header, HTTPException
 
 from core.config import settings
 from core.database import get_pool
+from core.utils import cuid
 from models.schemas import ScanRunResponse, TriggerScanResponse
 from pipeline.graph import run_pipeline
 
@@ -23,8 +26,10 @@ async def trigger_scan(
     if not source_row:
         raise HTTPException(status_code=404, detail=f"Source '{source}' not found")
 
+    scan_id = cuid()
     scan_row = await pool.fetchrow(
-        """INSERT INTO scan_runs (source_name, status) VALUES ($1, 'running') RETURNING id""",
+        """INSERT INTO scan_runs (id, "sourceName", status) VALUES ($1, $2, 'running') RETURNING id""",
+        scan_id,
         source,
     )
     scan_run_id = scan_row["id"]
@@ -33,8 +38,9 @@ async def trigger_scan(
         await run_pipeline(source, scan_run_id)
     except Exception as e:
         await pool.execute(
-            "UPDATE scan_runs SET status = 'failed', errors = 1, finished_at = NOW() WHERE id = $1",
+            """UPDATE scan_runs SET status = 'failed', errors = 1, "finishedAt" = $2 WHERE id = $1""",
             scan_run_id,
+            datetime.now(UTC).replace(tzinfo=None),
         )
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -48,19 +54,20 @@ async def trigger_scan(
 async def list_scan_runs(limit: int = 20):
     pool = await get_pool()
     rows = await pool.fetch(
-        "SELECT * FROM scan_runs ORDER BY started_at DESC LIMIT $1", limit
+        """SELECT * FROM scan_runs ORDER BY "startedAt" DESC LIMIT $1""",
+        limit,
     )
     return [
         ScanRunResponse(
             id=row["id"],
-            sourceName=row["source_name"],
+            sourceName=row["sourceName"],
             status=row["status"],
-            postsFound=row["posts_found"],
-            postsNew=row["posts_new"],
-            jobsAdded=row["jobs_added"],
+            postsFound=row["postsFound"],
+            postsNew=row["postsNew"],
+            jobsAdded=row["jobsAdded"],
             errors=row["errors"],
-            startedAt=row["started_at"],
-            finishedAt=row["finished_at"],
+            startedAt=row["startedAt"],
+            finishedAt=row["finishedAt"],
         )
         for row in rows
     ]

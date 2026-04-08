@@ -10,7 +10,7 @@ router = APIRouter(prefix="/searches", tags=["searches"])
 async def list_searches(userId: str = Query(...)):
     pool = await get_pool()
     rows = await pool.fetch(
-        "SELECT * FROM saved_searches WHERE user_id = $1 ORDER BY created_at DESC",
+        """SELECT * FROM saved_searches WHERE "userId" = $1 ORDER BY "createdAt" DESC""",
         userId,
     )
     return [
@@ -18,9 +18,9 @@ async def list_searches(userId: str = Query(...)):
             id=row["id"],
             keywords=row["keywords"],
             location=row["location"],
-            jobType=row["job_type"],
-            isActive=row["is_active"],
-            createdAt=row["created_at"],
+            jobType=row["jobType"],
+            isActive=row["isActive"],
+            createdAt=row["createdAt"],
         )
         for row in rows
     ]
@@ -30,7 +30,7 @@ async def list_searches(userId: str = Query(...)):
 async def create_search(data: CreateSavedSearch, userId: str = Query(...)):
     pool = await get_pool()
     row = await pool.fetchrow(
-        """INSERT INTO saved_searches (user_id, keywords, location, job_type)
+        """INSERT INTO saved_searches ("userId", keywords, location, "jobType")
         VALUES ($1, $2, $3, $4) RETURNING *""",
         userId,
         data.keywords,
@@ -41,9 +41,9 @@ async def create_search(data: CreateSavedSearch, userId: str = Query(...)):
         id=row["id"],
         keywords=row["keywords"],
         location=row["location"],
-        jobType=row["job_type"],
-        isActive=row["is_active"],
-        createdAt=row["created_at"],
+        jobType=row["jobType"],
+        isActive=row["isActive"],
+        createdAt=row["createdAt"],
     )
 
 
@@ -51,7 +51,7 @@ async def create_search(data: CreateSavedSearch, userId: str = Query(...)):
 async def delete_search(search_id: str, userId: str = Query(...)):
     pool = await get_pool()
     result = await pool.execute(
-        "DELETE FROM saved_searches WHERE id = $1 AND user_id = $2",
+        """DELETE FROM saved_searches WHERE id = $1 AND "userId" = $2""",
         search_id,
         userId,
     )

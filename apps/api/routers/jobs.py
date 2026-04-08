@@ -24,7 +24,7 @@ async def list_jobs(
 
     if search:
         conditions.append(
-            f"(l.title ILIKE ${idx} OR l.description ILIKE ${idx} OR l.company ILIKE ${idx})"
+            f"""(l.title ILIKE ${idx} OR l.description ILIKE ${idx} OR l.company ILIKE ${idx})"""
         )
         params.append(f"%{search}%")
         idx += 1
@@ -33,7 +33,7 @@ async def list_jobs(
         params.append(f"%{location}%")
         idx += 1
     if jobType:
-        conditions.append(f"l.job_type = ${idx}")
+        conditions.append(f"""l."jobType" = ${idx}""")
         params.append(jobType)
         idx += 1
     if company:
@@ -44,16 +44,17 @@ async def list_jobs(
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
     count_row = await pool.fetchrow(
-        f"SELECT COUNT(*) as total FROM listings l {where_clause}", *params
+        f"SELECT COUNT(*) as total FROM listings l {where_clause}",
+        *params,
     )
     total = count_row["total"]
 
     rows = await pool.fetch(
         f"""SELECT l.* {" , usj.id as save_id" if userId else ""}
         FROM listings l
-        {"LEFT JOIN user_saved_jobs usj ON usj.listing_id = l.id AND usj.user_id = $" + str(idx) if userId else ""}
+        {"LEFT JOIN user_saved_jobs usj ON usj.\"listingId\" = l.id AND usj.\"userId\" = $" + str(idx) if userId else ""}
         {where_clause}
-        ORDER BY l.created_at DESC
+        ORDER BY l."createdAt" DESC
         LIMIT ${idx + (1 if userId else 0)} OFFSET ${idx + (1 if userId else 0) + 1}""",
         *params,
         *([userId] if userId else []),
@@ -72,12 +73,12 @@ async def list_jobs(
                 location=row["location"],
                 salary=row["salary"],
                 url=row["url"],
-                jobType=row["job_type"],
-                applyUrl=row["apply_url"],
-                sourceName=row["source_name"],
+                jobType=row["jobType"],
+                applyUrl=row["applyUrl"],
+                sourceName=row["sourceName"],
                 metadata=row["metadata"],
-                postedAt=row["posted_at"],
-                createdAt=row["created_at"],
+                postedAt=row["postedAt"],
+                createdAt=row["createdAt"],
                 isSaved=row.get("save_id") is not None if userId else False,
             )
         )
@@ -101,10 +102,10 @@ async def get_job(listing_id: str):
         location=row["location"],
         salary=row["salary"],
         url=row["url"],
-        jobType=row["job_type"],
-        applyUrl=row["apply_url"],
-        sourceName=row["source_name"],
+        jobType=row["jobType"],
+        applyUrl=row["applyUrl"],
+        sourceName=row["sourceName"],
         metadata=row["metadata"],
-        postedAt=row["posted_at"],
-        createdAt=row["created_at"],
+        postedAt=row["postedAt"],
+        createdAt=row["createdAt"],
     )

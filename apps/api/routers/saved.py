@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 
 from core.database import get_pool
+from core.utils import cuid
 from models.schemas import (
     CreateSavedJob,
     ListingResponse,
@@ -17,13 +18,13 @@ async def list_saved_jobs(userId: str = Query(...)):
     rows = await pool.fetch(
         """SELECT usj.*, l.id as l_id, l.title as l_title, l.company as l_company,
         l.description as l_description, l.location as l_location, l.salary as l_salary,
-        l.url as l_url, l.job_type as l_job_type,         l.apply_url as l_apply_url,
-        l.posted_at as l_posted_at, l.created_at as l_created_at,
-        l.source_name as l_source_name, l.metadata as l_metadata
+        l.url as l_url, l."jobType" as l_job_type, l."applyUrl" as l_apply_url,
+        l."postedAt" as l_posted_at, l."createdAt" as l_created_at,
+        l."sourceName" as l_source_name, l.metadata as l_metadata
         FROM user_saved_jobs usj
-        JOIN listings l ON l.id = usj.listing_id
-        WHERE usj.user_id = $1
-        ORDER BY usj.created_at DESC""",
+        JOIN listings l ON l.id = usj."listingId"
+        WHERE usj."userId" = $1
+        ORDER BY usj."createdAt" DESC""",
         userId,
     )
     result = []
@@ -31,7 +32,7 @@ async def list_saved_jobs(userId: str = Query(...)):
         result.append(
             UserSavedJobResponse(
                 id=row["id"],
-                listingId=row["listing_id"],
+                listingId=row["listingId"],
                 status=row["status"],
                 notes=row["notes"],
                 listing=ListingResponse(
@@ -49,7 +50,7 @@ async def list_saved_jobs(userId: str = Query(...)):
                     sourceName=row["l_source_name"],
                     metadata=row["l_metadata"],
                 ),
-                createdAt=row["created_at"],
+                createdAt=row["createdAt"],
             )
         )
     return result
@@ -59,7 +60,7 @@ async def list_saved_jobs(userId: str = Query(...)):
 async def save_job(data: CreateSavedJob, userId: str = Query(...)):
     pool = await get_pool()
     existing = await pool.fetchrow(
-        "SELECT id FROM user_saved_jobs WHERE user_id = $1 AND listing_id = $2",
+        """SELECT id FROM user_saved_jobs WHERE "userId" = $1 AND "listingId" = $2""",
         userId,
         data.listingId,
     )
@@ -73,14 +74,15 @@ async def save_job(data: CreateSavedJob, userId: str = Query(...)):
         raise HTTPException(status_code=404, detail="Listing not found")
 
     row = await pool.fetchrow(
-        """INSERT INTO user_saved_jobs (user_id, listing_id, status)
-        VALUES ($1, $2, 'saved') RETURNING *""",
+        """INSERT INTO user_saved_jobs (id, "userId", "listingId", status)
+        VALUES ($1, $2, $3, 'saved') RETURNING *""",
+        cuid(),
         userId,
         data.listingId,
     )
     return UserSavedJobResponse(
         id=row["id"],
-        listingId=row["listing_id"],
+        listingId=row["listingId"],
         status=row["status"],
         notes=row["notes"],
         listing=ListingResponse(
@@ -91,14 +93,14 @@ async def save_job(data: CreateSavedJob, userId: str = Query(...)):
             location=listing["location"],
             salary=listing["salary"],
             url=listing["url"],
-            jobType=listing["job_type"],
-            applyUrl=listing["apply_url"],
-            postedAt=listing["posted_at"],
-            createdAt=listing["created_at"],
-            sourceName=listing["source_name"],
+            jobType=listing["jobType"],
+            applyUrl=listing["applyUrl"],
+            postedAt=listing["postedAt"],
+            createdAt=listing["createdAt"],
+            sourceName=listing["sourceName"],
             metadata=listing["metadata"],
         ),
-        createdAt=row["created_at"],
+        createdAt=row["createdAt"],
     )
 
 
@@ -108,7 +110,7 @@ async def update_saved_job(
 ):
     pool = await get_pool()
     existing = await pool.fetchrow(
-        "SELECT * FROM user_saved_jobs WHERE id = $1 AND user_id = $2",
+        """SELECT * FROM user_saved_jobs WHERE id = $1 AND "userId" = $2""",
         saved_id,
         userId,
     )
@@ -132,18 +134,18 @@ async def update_saved_job(
 
     params.extend([saved_id, userId])
     row = await pool.fetchrow(
-        f"""UPDATE user_saved_jobs SET {", ".join(updates)} WHERE id = ${idx} AND user_id = ${idx + 1}
+        f"""UPDATE user_saved_jobs SET {", ".join(updates)} WHERE id = ${idx} AND "userId" = ${idx + 1}
         RETURNING *""",
         *params,
     )
 
     listing = await pool.fetchrow(
-        "SELECT * FROM listings WHERE id = $1", row["listing_id"]
+        """SELECT * FROM listings WHERE id = $1""", row["listingId"]
     )
 
     return UserSavedJobResponse(
         id=row["id"],
-        listingId=row["listing_id"],
+        listingId=row["listingId"],
         status=row["status"],
         notes=row["notes"],
         listing=ListingResponse(
@@ -154,14 +156,14 @@ async def update_saved_job(
             location=listing["location"],
             salary=listing["salary"],
             url=listing["url"],
-            jobType=listing["job_type"],
-            applyUrl=listing["apply_url"],
-            postedAt=listing["posted_at"],
-            createdAt=listing["created_at"],
-            sourceName=listing["source_name"],
+            jobType=listing["jobType"],
+            applyUrl=listing["applyUrl"],
+            postedAt=listing["postedAt"],
+            createdAt=listing["createdAt"],
+            sourceName=listing["sourceName"],
             metadata=listing["metadata"],
         ),
-        createdAt=row["created_at"],
+        createdAt=row["createdAt"],
     )
 
 
@@ -169,7 +171,7 @@ async def update_saved_job(
 async def delete_saved_job(saved_id: str, userId: str = Query(...)):
     pool = await get_pool()
     result = await pool.execute(
-        "DELETE FROM user_saved_jobs WHERE id = $1 AND user_id = $2",
+        """DELETE FROM user_saved_jobs WHERE id = $1 AND "userId" = $2""",
         saved_id,
         userId,
     )
