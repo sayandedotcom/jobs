@@ -27,10 +27,10 @@ export const source: Source[] = [
   {
     index: 3,
     id: "ycombinator",
-    name: "Y Combinator",
+    name: "Hacker News",
     src: "https://cdn.brandfetch.io/idKhWTXUYD/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668082380917",
-    active: false,
-    url: "https://news.ycombinator.com/jobs",
+    active: true,
+    url: "https://news.ycombinator.com",
   },
   {
     index: 4,

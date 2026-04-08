@@ -15,7 +15,7 @@ export function getSourceConfig(sourceName: string | null): Source | undefined {
 }
 
 const SOURCE_LABEL_SUFFIX: Record<string, string> = {
-  hackernews: "HN Hiring",
+  hackernews: "Who is hiring?",
 }
 
 export function SourceBar({

@@ -10,6 +10,7 @@ def _make_post(content: str) -> RawPostData:
         "permalink": None,
         "author": None,
         "posted_at": None,
+        "metadata": {},
     }
 
 
@@ -65,3 +66,28 @@ def test_job_keywords_exist():
     assert len(JOB_KEYWORDS) > 10
     assert "hiring" in JOB_KEYWORDS
     assert "remote" in JOB_KEYWORDS
+
+
+@pytest.mark.asyncio
+async def test_filter_node_keeps_all_hackernews_posts():
+    state: PipelineState = {
+        "source_name": "hackernews",
+        "scan_run_id": "test",
+        "sub_sources": [{"name": "latest", "type": "whoishiring"}],
+        "raw_posts": [
+            _make_post("Acme | Staff Engineer | Remote"),
+            _make_post("Beta | Product Designer | San Francisco"),
+        ],
+        "filtered_posts": [],
+        "extracted_jobs": [],
+        "new_listings": [],
+        "matched_listings": [],
+        "posts_found": 2,
+        "posts_new": 0,
+        "jobs_added": 0,
+        "errors": 0,
+    }
+
+    result = await filter_node(state)
+
+    assert len(result["filtered_posts"]) == 2

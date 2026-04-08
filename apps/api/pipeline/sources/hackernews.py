@@ -3,6 +3,7 @@ from contextlib import suppress
 from datetime import datetime, UTC
 from html.parser import HTMLParser
 
+
 import httpx
 from pipeline.sources.base import BaseSource
 from pipeline.sources.registry import register_source
@@ -17,12 +18,7 @@ class _HTMLStripper(HTMLParser):
         self._parts: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag == "a":
-            for name, value in attrs:
-                if name == "href" and value:
-                    self._parts.append(value)
-                    self._parts.append(" ")
-        elif tag in ("p", "br", "li"):
+        if tag in ("p", "br", "li"):
             self._parts.append("\n")
 
     def handle_data(self, data: str) -> None:
@@ -38,19 +34,30 @@ def _html_to_plain(html: str) -> str:
     return stripper.get_text()
 
 
-def _extract_company_from_comment(text: str) -> str:
-    """Extract company name from HN 'Who is hiring?' comment header.
+def _normalize_plain_text(text: str) -> str:
+    lines = [line.strip() for line in text.splitlines()]
+    normalized: list[str] = []
+    previous_blank = False
 
-    HN hiring comments follow a convention:
-        Company Name | Role | Location | ...
-    The first line typically contains pipe-delimited fields.
-    """
-    first_line = text.split("\n", 1)[0].strip()
-    # Remove leading bullet/dash characters
-    first_line = re.sub(r"^[\s\-•*|]+", "", first_line).strip()
-    # Split on pipe or em-dash (common delimiters in HN comments)
-    parts = re.split(r"\s*[|–—]\s*", first_line, maxsplit=1)
-    return parts[0].strip() if parts else "Unknown"
+    for line in lines:
+        if not line:
+            if normalized and not previous_blank:
+                normalized.append("")
+            previous_blank = True
+            continue
+
+        normalized.append(line)
+        previous_blank = False
+
+    return "\n".join(normalized).strip()
+
+
+def _extract_header_line(text: str) -> str:
+    for line in text.splitlines():
+        header_line = re.sub(r"^[\s\-•*|]+", "", line).strip()
+        if header_line:
+            return header_line
+    return ""
 
 
 @register_source
@@ -138,9 +145,10 @@ class HackerNewsService(BaseSource):
         Each thread typically contains 200-800 job postings as top-level comments.
         Comments follow a convention: "Company | Role | Location | ..."
         """
-        story_id = await self._resolve_story_id(client, name)
-        if not story_id:
+        story = await self._resolve_story(client, name)
+        if not story:
             return []
+        story_id, story_title = story
 
         posts: list[RawPostData] = []
         page = 0
@@ -162,23 +170,34 @@ class HackerNewsService(BaseSource):
             nb_pages = data.get("nbPages", 1)
 
             for hit in data.get("hits", []):
+                parent_id = hit.get("parent_id")
+                if parent_id is not None:
+                    with suppress(TypeError, ValueError):
+                        if int(parent_id) != story_id:
+                            continue
+
                 created_at_str = hit.get("created_at", "")
                 created_at = None
                 if created_at_str:
                     with suppress(ValueError, TypeError):
                         created_at = datetime.fromisoformat(created_at_str)
+                        if created_at.tzinfo is not None:
+                            created_at = created_at.replace(tzinfo=None)
 
                 if since and created_at and created_at < since:
                     continue
 
                 comment_html = hit.get("comment_text") or hit.get("text") or ""
-                plain_text = _html_to_plain(comment_html)
+                plain_text = _normalize_plain_text(_html_to_plain(comment_html))
                 if not plain_text.strip():
                     continue
 
                 object_id = hit.get("objectID", "")
+                if not object_id:
+                    continue
                 author = hit.get("author", "")
                 posted_at = created_at.isoformat() if created_at else None
+                header_line = _extract_header_line(plain_text)
 
                 posts.append(
                     {
@@ -188,9 +207,13 @@ class HackerNewsService(BaseSource):
                         "author": author or None,
                         "posted_at": posted_at,
                         "metadata": {
-                            "points": hit.get("points", 0),
-                            "story_id": story_id,
-                            "parent_story_title": None,
+                            "commentId": object_id,
+                            "headerLine": header_line,
+                            "htmlContent": comment_html,
+                            "hnAuthor": author or None,
+                            "storyId": story_id,
+                            "storyTitle": story_title,
+                            "type": "whoishiring",
                         },
                     }
                 )
@@ -199,9 +222,9 @@ class HackerNewsService(BaseSource):
 
         return posts
 
-    async def _resolve_story_id(
+    async def _resolve_story(
         self, client: httpx.AsyncClient, name: str
-    ) -> int | None:
+    ) -> tuple[int, str | None] | None:
         """Resolve a sub_source name to an HN story ID.
 
         If name is "latest" or empty, searches Algolia for the newest
@@ -209,7 +232,8 @@ class HackerNewsService(BaseSource):
         """
         if name and name.lower() != "latest":
             try:
-                return int(name)
+                story_id = int(name)
+                return story_id, await self._fetch_story_title(client, story_id)
             except ValueError:
                 pass
 
@@ -227,9 +251,21 @@ class HackerNewsService(BaseSource):
 
         data = resp.json()
         for hit in data.get("hits", []):
-            title = (hit.get("title") or "").lower()
-            if "who is hiring" in title:
-                return int(hit["objectID"])
+            title = hit.get("title") or ""
+            if "who is hiring" in title.lower():
+                return int(hit["objectID"]), title
+
+        return None
+
+    async def _fetch_story_title(
+        self, client: httpx.AsyncClient, story_id: int
+    ) -> str | None:
+        resp = await client.get(f"{self.FIREBASE_BASE}/item/{story_id}.json")
+        if resp.status_code == 200:
+            item = resp.json() or {}
+            title = item.get("title")
+            if isinstance(title, str) and title.strip():
+                return title.strip()
 
         return None
 

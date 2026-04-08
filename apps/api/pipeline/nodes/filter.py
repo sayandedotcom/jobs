@@ -46,6 +46,9 @@ async def filter_node(state: PipelineState) -> dict:
     This is intentionally over-inclusive (high recall) — the LLM extract step
     handles precision by classifying is_job_posting.
     """
+    if state["source_name"] == "hackernews":
+        return {"filtered_posts": state["raw_posts"]}
+
     filtered = []
     for post in state["raw_posts"]:
         content_lower = post["raw_content"].lower()

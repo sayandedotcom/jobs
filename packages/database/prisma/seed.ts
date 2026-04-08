@@ -23,6 +23,15 @@ async function main() {
     },
   })
 
+  const hackerNews = await prisma.source.upsert({
+    where: { name: "hackernews" },
+    update: {},
+    create: {
+      name: "hackernews",
+      type: "hackernews",
+    },
+  })
+
   for (const name of subreddits) {
     await prisma.subSource.upsert({
       where: {
@@ -39,6 +48,34 @@ async function main() {
     })
     console.log(`  Added subreddit: ${name}`)
   }
+
+  await prisma.subSource.deleteMany({
+    where: {
+      sourceId: hackerNews.id,
+      type: "whoishiring",
+      NOT: {
+        name: "latest",
+      },
+    },
+  })
+
+  await prisma.subSource.upsert({
+    where: {
+      sourceId_name: {
+        sourceId: hackerNews.id,
+        name: "latest",
+      },
+    },
+    update: {
+      type: "whoishiring",
+    },
+    create: {
+      sourceId: hackerNews.id,
+      name: "latest",
+      type: "whoishiring",
+    },
+  })
+  console.log('  Added Hacker News "latest" hiring thread')
 
   console.log("Seed completed!")
 }
