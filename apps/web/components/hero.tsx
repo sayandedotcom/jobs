@@ -6,9 +6,11 @@ import { siteConfig } from "@/lib/site-config"
 import { Button } from "@workspace/ui/components/button"
 import { AnimatedBeamHero } from "@/components/animated-beam-hero"
 import { Bot } from "lucide-react"
-import { LightRays } from "@workspace/ui/components/light-rays"
+// import { LightRays } from "@workspace/ui/components/light-rays"
 import { ShootingStars } from "@workspace/ui/components/shooting-stars"
 import { StarsBackground } from "@workspace/ui/components/stars-background"
+// import OrbitImages from "@workspace/ui/components/OrbitImages"
+// import { images } from "./orbit-integrations"
 
 export function Hero() {
   const signIn = () =>
@@ -58,7 +60,52 @@ export function Hero() {
           <ShootingStars />
           <StarsBackground />
         </section>
-
+        {/* <section>
+          <div className="relative">
+            <OrbitImages
+              images={images.slice(0, 14)}
+              shape="ellipse"
+              radiusX={350}
+              radiusY={90}
+              rotation={-6}
+              duration={40}
+              itemSize={40}
+              responsive={true}
+              baseWidth={800}
+              radius={160}
+              direction="normal"
+              fill
+              showPath
+              paused={false}
+              circular
+              pathColor="rgba(180,180,200,0.35)"
+              pathWidth={1}
+            />
+            <div className="absolute inset-0">
+              <OrbitImages
+                images={images.slice(14)}
+                shape="ellipse"
+                radiusX={200}
+                radiusY={52}
+                rotation={-6}
+                duration={25}
+                itemSize={36}
+                responsive={true}
+                baseWidth={800}
+                radius={100}
+                direction="normal"
+                fill
+                showPath
+                paused={false}
+                circular
+                pathColor="rgba(180,180,200,0.3)"
+                pathWidth={1}
+              />
+            </div>{" "}
+            <ShootingStars />
+            <StarsBackground />
+          </div>
+        </section> */}
         <section className="border-y border-white/10 bg-white/[0.02] px-6 py-12">
           <div className="mx-auto grid max-w-4xl gap-8 sm:grid-cols-3">
             {siteConfig.stats.map((s) => (

@@ -186,11 +186,11 @@ export const source: Source[] = [
   },
   {
     index: 23,
-    id: "authenticjobs",
-    name: "Authentic Jobs",
-    src: "https://cdn.brandfetch.io/idhfy_NHYG/theme/light/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1763168112055",
-    active: true,
-    url: "https://authenticjobs.com",
+    id: "jobvite",
+    name: "Jobvite",
+    src: "https://cdn.brandfetch.io/idWNbzxtXe/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1691565040995",
+    active: false,
+    url: "https://www.jobvite.com",
   },
   {
     index: 24,
@@ -224,12 +224,12 @@ export const source: Source[] = [
     active: true,
     url: "https://recruitee.com",
   },
-  {
-    index: 28,
-    id: "jobvite",
-    name: "Jobvite",
-    src: "https://cdn.brandfetch.io/idWNbzxtXe/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1691565040995",
-    active: false,
-    url: "https://www.jobvite.com",
-  },
+  // {
+  //   index: 28,
+  //   id: "authenticjobs",
+  //   name: "Authentic Jobs",
+  //   src: "https://cdn.brandfetch.io/idhfy_NHYG/theme/light/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1763168112055",
+  //   active: true,
+  //   url: "https://authenticjobs.com",
+  // },
 ]
