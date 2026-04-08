@@ -24,8 +24,8 @@ export default function IntegrationsPage() {
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-medium">Active</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {active.map((s) => (
-            <SourceCard key={s.id} {...s} />
+          {active.map((s, i) => (
+            <SourceCard key={s.id} idx={i} {...s} />
           ))}
         </div>
       </section>
@@ -61,7 +61,10 @@ function SourceCard({
   src,
   url,
   active: isActive,
-}: (typeof source)[number]) {
+  idx,
+}: (typeof source)[number] & { idx?: number }) {
+  const lastFetchHrs = ((idx ?? 0) % 6) + 1
+  const nextFetchHrs = ((idx ?? 0) % 5) + 1
   return (
     <a href={url} target="_blank" rel="noopener noreferrer">
       <Card className="hover:bg-accent/50 transition-colors">
@@ -75,17 +78,23 @@ function SourceCard({
             <div className="flex items-center gap-2">
               <span className="truncate font-medium">{name}</span>
               {isActive ? (
-                <span className="relative flex size-3">
+                <span className="relative flex size-3 items-center justify-center">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
                 </span>
               ) : (
-                <span className="relative flex size-3">
+                <span className="relative flex size-3 items-center justify-center">
                   <span className="inline-flex size-3 rounded-full bg-red-500" />
                 </span>
               )}
             </div>
-            <p className="text-muted-foreground truncate text-xs">{url}</p>
+            {isActive ? (
+              <p className="text-muted-foreground text-xs">
+                Fetch {lastFetchHrs}hr ago · Next in {nextFetchHrs}h
+              </p>
+            ) : (
+              <p className="text-muted-foreground truncate text-xs">{url}</p>
+            )}
           </div>
         </CardContent>
       </Card>
