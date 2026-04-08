@@ -13,7 +13,7 @@ export const source: Source[] = [
     id: "reddit",
     name: "Reddit",
     src: "https://cdn.brandfetch.io/idkKwm0IT0/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1768324678544",
-    active: true,
+    active: false,
     url: "https://www.reddit.com",
   },
   {
@@ -21,7 +21,7 @@ export const source: Source[] = [
     id: "x",
     name: "X (Twitter)",
     src: "https://cdn.brandfetch.io/idS5WhqBbM/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1768324401335",
-    active: true,
+    active: false,
     url: "https://x.com",
   },
   {
@@ -29,7 +29,7 @@ export const source: Source[] = [
     id: "ycombinator",
     name: "Y Combinator",
     src: "https://cdn.brandfetch.io/idKhWTXUYD/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668082380917",
-    active: true,
+    active: false,
     url: "https://news.ycombinator.com/jobs",
   },
   {
@@ -37,7 +37,7 @@ export const source: Source[] = [
     id: "ashbyhq",
     name: "Ashby HQ",
     src: "https://cdn.brandfetch.io/idomC5_5qC/w/400/h/400/theme/dark/icon.png?c=1bxid64Mup7aczewSAYMX&t=1721803758402",
-    active: true,
+    active: false,
     url: "https://www.ashbyhq.com",
   },
   {
@@ -45,7 +45,7 @@ export const source: Source[] = [
     id: "greenhouse",
     name: "Greenhouse",
     src: "https://cdn.brandfetch.io/id7baa8wpg/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1667576202306",
-    active: true,
+    active: false,
     url: "https://www.greenhouse.io",
   },
   {
@@ -53,7 +53,7 @@ export const source: Source[] = [
     id: "lever",
     name: "Lever",
     src: "https://cdn.brandfetch.io/id6lPO7l84/w/200/h/200/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1773973732534",
-    active: true,
+    active: false,
     url: "https://www.lever.co",
   },
   {
@@ -61,7 +61,7 @@ export const source: Source[] = [
     id: "smartrecruiters",
     name: "Smart Recruiters",
     src: "https://cdn.brandfetch.io/idrhoiBuDx/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668517475239",
-    active: true,
+    active: false,
     url: "https://www.smartrecruiters.com",
   },
   {
@@ -69,7 +69,7 @@ export const source: Source[] = [
     id: "weworkremotely",
     name: "We Work Remotely",
     src: "https://cdn.brandfetch.io/id7rI_5uT1/w/400/h/400/theme/dark/icon.png?c=1bxid64Mup7aczewSAYMX&t=1667589092010",
-    active: true,
+    active: false,
     url: "https://weworkremotely.com",
   },
   {
@@ -85,7 +85,7 @@ export const source: Source[] = [
     id: "remoteok",
     name: "Remote OK",
     src: "https://cdn.brandfetch.io/id_IODcA1I/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1771191808060",
-    active: true,
+    active: false,
     url: "https://remoteok.com",
   },
   {
@@ -93,7 +93,7 @@ export const source: Source[] = [
     id: "remotive",
     name: "Remotive",
     src: "https://cdn.brandfetch.io/idWg9vpUX4/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1768763388510",
-    active: true,
+    active: false,
     url: "https://remotive.com",
   },
   {
@@ -101,7 +101,7 @@ export const source: Source[] = [
     id: "arbeitnow",
     name: "Arbeitnow",
     src: "https://cdn.brandfetch.io/idc2jOV98-/w/80/h/80/theme/dark/icon.png?c=1bxid64Mup7aczewSAYMX&t=1768038030952",
-    active: true,
+    active: false,
     url: "https://www.arbeitnow.com",
   },
   {
@@ -109,7 +109,7 @@ export const source: Source[] = [
     id: "himalayas",
     name: "Himalayas",
     src: "https://cdn.brandfetch.io/idWFWV31km/w/640/h/640/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1768335301469",
-    active: true,
+    active: false,
     url: "https://himalayas.app",
   },
   {
@@ -117,7 +117,7 @@ export const source: Source[] = [
     id: "jobicy",
     name: "Jobicy",
     src: "https://cdn.brandfetch.io/idR6mincUh/w/512/h/512/theme/dark/icon.png?c=1bxid64Mup7aczewSAYMX&t=1677082859275",
-    active: true,
+    active: false,
     url: "https://jobicy.com",
   },
   {
@@ -125,7 +125,7 @@ export const source: Source[] = [
     id: "teamtailor",
     name: "Teamtailor",
     src: "https://cdn.brandfetch.io/iduIVddBr8/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668013906077",
-    active: true,
+    active: false,
     url: "https://www.teamtailor.com",
   },
   {
@@ -133,7 +133,7 @@ export const source: Source[] = [
     id: "workable",
     name: "Workable",
     src: "https://cdn.brandfetch.io/idHP9w7qSm/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1772317896291",
-    active: true,
+    active: false,
     url: "https://www.workable.com",
   },
   {
@@ -181,7 +181,7 @@ export const source: Source[] = [
     id: "remotefirstjobs",
     name: "Remote First Jobs",
     src: "https://cdn.brandfetch.io/idw6LdUaJb/theme/dark/id5LR7tKSK.svg?c=1bxid64Mup7aczewSAYMX&t=1746776661124",
-    active: true,
+    active: false,
     url: "https://remotefirstjobs.com",
   },
   {
@@ -197,7 +197,7 @@ export const source: Source[] = [
     id: "workingnomads",
     name: "Working Nomads",
     src: "https://cdn.brandfetch.io/id-w197tJn/w/400/h/400/theme/dark/icon.png?c=1bxid64Mup7aczewSAYMX&t=1775360264247",
-    active: true,
+    active: false,
     url: "https://www.workingnomads.com",
   },
   {
@@ -205,7 +205,7 @@ export const source: Source[] = [
     id: "remotewlb",
     name: "Remote WLB",
     src: "https://cdn.brandfetch.io/idyiyIM-0M/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1716821129090",
-    active: true,
+    active: false,
     url: "https://remotewlb.com",
   },
   {
@@ -213,7 +213,7 @@ export const source: Source[] = [
     id: "smashingmagazine",
     name: "Smashing Magazine",
     src: "https://cdn.brandfetch.io/idNfiMWXmt/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1771462101766",
-    active: true,
+    active: false,
     url: "https://www.smashingmagazine.com/jobs",
   },
   {
@@ -221,7 +221,7 @@ export const source: Source[] = [
     id: "recruitee",
     name: "Recruitee",
     src: "https://cdn.brandfetch.io/idJH_-rUYa/w/200/h/200/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1774411802946",
-    active: true,
+    active: false,
     url: "https://recruitee.com",
   },
   {
@@ -229,7 +229,7 @@ export const source: Source[] = [
     id: "authenticjobs",
     name: "Authentic Jobs",
     src: "https://cdn.brandfetch.io/idhfy_NHYG/theme/light/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1763168112055",
-    active: true,
+    active: false,
     url: "https://authenticjobs.com",
   },
 ]
