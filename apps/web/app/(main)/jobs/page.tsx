@@ -11,6 +11,7 @@ import { Button } from "@workspace/ui/components/button"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { api, type Listing } from "@/lib/api-client"
 import { authClient } from "@/lib/auth-client"
+import { useQueryFilters } from "@/hooks/use-query-filters"
 
 const FAKE_JOBS: Listing[] = [
   {
@@ -246,15 +247,56 @@ const FAKE_JOBS: Listing[] = [
 ]
 
 export default function JobsPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="-mt-4 flex flex-col">
+          <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pt-4 pb-2">
+            <div className="bg-muted mx-auto h-11 w-full max-w-2xl animate-pulse rounded-md" />
+            <p className="text-muted-foreground mt-3 text-sm">
+              Loading filters...
+            </p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <JobCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <JobsPageContent />
+    </React.Suspense>
+  )
+}
+
+function JobsPageContent() {
   const { data: session } = authClient.useSession()
+  const {
+    search,
+    location,
+    page,
+    selectedSources,
+    selectedWorkModes,
+    selectedJobTypes,
+    selectedExperience,
+    selectedDates,
+    setSearch,
+    setLocation,
+    setPage,
+    setSelectedSources,
+    setSelectedWorkModes,
+    setSelectedJobTypes,
+    setSelectedExperience,
+    setSelectedDates,
+    clearAll,
+  } = useQueryFilters()
+
   const [jobs, setJobs] = React.useState<Listing[]>([])
   const [total, setTotal] = React.useState(0)
-  const [page, setPage] = React.useState(1)
   const [loading, setLoading] = React.useState(true)
-  const [search, setSearch] = React.useState("")
-  const [location, setLocation] = React.useState("")
-  const [jobType, setJobType] = React.useState("all")
-  const [selectedSources, setSelectedSources] = React.useState<string[]>([])
 
   React.useEffect(() => {
     const fetchJobs = async () => {
@@ -263,7 +305,6 @@ export default function JobsPage() {
         const data = await api.jobs.list({
           search: search || undefined,
           location: location || undefined,
-          jobType: jobType === "all" ? undefined : jobType,
           page,
           pageSize: 20,
         })
@@ -277,22 +318,74 @@ export default function JobsPage() {
       }
     }
     fetchJobs()
-  }, [search, location, jobType, page, session?.user?.id])
+  }, [search, location, page, session?.user?.id])
 
   const totalPages = Math.ceil(total / 20)
 
   const filteredJobs = React.useMemo(() => {
     const list = jobs.length > 0 ? jobs : FAKE_JOBS
-    if (selectedSources.length === 0) return list
     return list.filter((job) => {
-      const sourceId = job.sourceName
-        ? sourceIdToSourceName(job.sourceName)
-        : null
-      return sourceId && selectedSources.includes(sourceId)
+      if (selectedSources.length > 0) {
+        const sourceId = job.sourceName
+          ? sourceIdToSourceName(job.sourceName)
+          : null
+        if (!sourceId || !selectedSources.includes(sourceId)) return false
+      }
+      if (selectedWorkModes.length > 0) {
+        const desc = job.description?.toLowerCase() ?? ""
+        const title = job.title?.toLowerCase() ?? ""
+        const text = `${title} ${desc}`
+        const matchesWorkMode = selectedWorkModes.some((mode) =>
+          text.includes(mode)
+        )
+        if (!matchesWorkMode) return false
+      }
+      if (selectedJobTypes.length > 0) {
+        const desc = job.description?.toLowerCase() ?? ""
+        const title = job.title?.toLowerCase() ?? ""
+        const text = `${title} ${desc}`
+        const matchesJobType = selectedJobTypes.some((type) =>
+          text.includes(type.replace("-", " "))
+        )
+        if (!matchesJobType) return false
+      }
+      if (selectedExperience.length > 0) {
+        const desc = job.description?.toLowerCase() ?? ""
+        const title = job.title?.toLowerCase() ?? ""
+        const text = `${title} ${desc}`
+        const matchesExp = selectedExperience.some((level) =>
+          text.includes(level)
+        )
+        if (!matchesExp) return false
+      }
+      if (selectedDates.length > 0 && job.postedAt) {
+        const jobDate = new Date(job.postedAt)
+        const jobMonthYear = jobDate.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        })
+        if (!selectedDates.includes(jobMonthYear)) return false
+      }
+      if (selectedDates.length > 0 && !job.postedAt) return false
+      return true
     })
-  }, [jobs, selectedSources])
+  }, [
+    jobs,
+    selectedSources,
+    selectedWorkModes,
+    selectedJobTypes,
+    selectedExperience,
+    selectedDates,
+  ])
 
-  const displayTotal = selectedSources.length > 0 ? filteredJobs.length : total
+  const displayTotal =
+    selectedSources.length > 0 ||
+    selectedWorkModes.length > 0 ||
+    selectedJobTypes.length > 0 ||
+    selectedExperience.length > 0 ||
+    selectedDates.length > 0
+      ? filteredJobs.length
+      : total
 
   return (
     <div className="-mt-4 flex flex-col">
@@ -332,7 +425,7 @@ export default function JobsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
               >
                 <ChevronLeftIcon className="size-4" />
@@ -344,7 +437,7 @@ export default function JobsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
               >
                 Next
@@ -357,11 +450,18 @@ export default function JobsPage() {
         <div className="sticky top-[6.5rem] h-[calc(100vh-7.5rem)] self-start">
           <JobFilterPanel
             location={location}
-            jobType={jobType}
             selectedSources={selectedSources}
+            selectedWorkModes={selectedWorkModes}
+            selectedJobTypes={selectedJobTypes}
+            selectedExperience={selectedExperience}
+            selectedDates={selectedDates}
             onLocationChange={setLocation}
-            onJobTypeChange={setJobType}
             onSelectedSourcesChange={setSelectedSources}
+            onSelectedWorkModesChange={setSelectedWorkModes}
+            onSelectedJobTypesChange={setSelectedJobTypes}
+            onSelectedExperienceChange={setSelectedExperience}
+            onSelectedDatesChange={setSelectedDates}
+            onClearAll={clearAll}
           />
         </div>
       </div>

@@ -56,7 +56,10 @@ function MultiSelect({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className={cn("h-auto min-h-8 w-full justify-between", className)}
+            className={cn(
+              "h-auto min-h-8 w-full justify-between py-1.5",
+              className
+            )}
           >
             <div className="flex flex-wrap gap-1">
               {selected.length > 0 ? (
