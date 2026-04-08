@@ -4,7 +4,8 @@ import * as React from "react"
 import { JobCard, JobCardSkeleton } from "@/components/cards"
 import {
   JobSearchBar,
-  JobFilterPanel,
+  FilterSidebarProvider,
+  FilterSidebar,
   sourceIdToSourceName,
 } from "@/components/job-filters"
 import { Button } from "@workspace/ui/components/button"
@@ -257,12 +258,10 @@ export default function JobsPage() {
               Loading filters...
             </p>
           </div>
-          <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <JobCardSkeleton key={i} />
-              ))}
-            </div>
+          <div className="space-y-3 pt-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <JobCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       }
@@ -388,17 +387,19 @@ function JobsPageContent() {
       : total
 
   return (
-    <div className="-mt-4 flex flex-col">
-      <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pt-4 pb-2">
-        <JobSearchBar search={search} onSearchChange={setSearch} />
-        <p className="text-muted-foreground mt-3 text-sm">
-          {loading
-            ? "Searching for jobs..."
-            : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
-        </p>
-      </div>
+    <FilterSidebarProvider>
+      <div className="-mt-4 flex flex-1 flex-col">
+        <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pt-4 pb-2">
+          <div className="mx-auto w-full max-w-2xl">
+            <JobSearchBar search={search} onSearchChange={setSearch} />
+          </div>
+          <p className="text-muted-foreground mt-3 text-sm">
+            {loading
+              ? "Searching for jobs..."
+              : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
+          </p>
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
           {loading ? (
             <div className="space-y-3">
@@ -446,25 +447,22 @@ function JobsPageContent() {
             </div>
           )}
         </div>
-
-        <div className="sticky top-[6.5rem] h-[calc(100vh-7.5rem)] self-start">
-          <JobFilterPanel
-            location={location}
-            selectedSources={selectedSources}
-            selectedWorkModes={selectedWorkModes}
-            selectedJobTypes={selectedJobTypes}
-            selectedExperience={selectedExperience}
-            selectedDates={selectedDates}
-            onLocationChange={setLocation}
-            onSelectedSourcesChange={setSelectedSources}
-            onSelectedWorkModesChange={setSelectedWorkModes}
-            onSelectedJobTypesChange={setSelectedJobTypes}
-            onSelectedExperienceChange={setSelectedExperience}
-            onSelectedDatesChange={setSelectedDates}
-            onClearAll={clearAll}
-          />
-        </div>
       </div>
-    </div>
+      <FilterSidebar
+        location={location}
+        selectedSources={selectedSources}
+        selectedWorkModes={selectedWorkModes}
+        selectedJobTypes={selectedJobTypes}
+        selectedExperience={selectedExperience}
+        selectedDates={selectedDates}
+        onLocationChange={setLocation}
+        onSelectedSourcesChange={setSelectedSources}
+        onSelectedWorkModesChange={setSelectedWorkModes}
+        onSelectedJobTypesChange={setSelectedJobTypes}
+        onSelectedExperienceChange={setSelectedExperience}
+        onSelectedDatesChange={setSelectedDates}
+        onClearAll={clearAll}
+      />
+    </FilterSidebarProvider>
   )
 }

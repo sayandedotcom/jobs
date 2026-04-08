@@ -16,7 +16,9 @@ export function SidebarLayout({
   children: React.ReactNode
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      style={{ "--sidebar-width": "18rem" } as React.CSSProperties}
+    >
       <AppSidebar user={user} />
       <SidebarInset className="h-svh overflow-y-auto">
         <div className="flex flex-col gap-4 px-4 pt-4 pb-4">{children}</div>
