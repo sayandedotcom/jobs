@@ -9,10 +9,17 @@ import {
   sourceIdToSourceName,
 } from "@/components/job-filters"
 import { Button } from "@workspace/ui/components/button"
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
+import { ChevronLeftIcon, ChevronRightIcon, LayoutGridIcon } from "lucide-react"
 import { api, type Listing } from "@/lib/api-client"
 import { authClient } from "@/lib/auth-client"
 import { useQueryFilters } from "@/hooks/use-query-filters"
+import { useCookieState } from "@/hooks/use-cookie-state"
 
 const FAKE_JOBS: Listing[] = [
   {
@@ -296,6 +303,11 @@ function JobsPageContent() {
   const [jobs, setJobs] = React.useState<Listing[]>([])
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(true)
+  const [twoColumns, setTwoColumns] = useCookieState<boolean>(
+    "jobs-grid-view",
+    false,
+    { serialize: (v) => String(v), deserialize: (v) => v === "true" }
+  )
 
   React.useEffect(() => {
     const fetchJobs = async () => {
@@ -393,28 +405,56 @@ function JobsPageContent() {
           <div className="mx-auto w-full max-w-2xl">
             <JobSearchBar search={search} onSearchChange={setSearch} />
           </div>
-          <p className="text-muted-foreground mt-3 text-sm">
-            {loading
-              ? "Searching for jobs..."
-              : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
-          </p>
+          <div className="mt-3 flex items-center justify-between">
+            <TooltipProvider delay={300}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant={twoColumns ? "default" : "outline"}
+                      size="icon-sm"
+                      className="shrink-0 cursor-pointer"
+                      onClick={() => setTwoColumns((v) => !v)}
+                      aria-label="Toggle grid view"
+                    >
+                      <LayoutGridIcon className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  {twoColumns ? "Single column" : "Two columns"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <p className="text-muted-foreground text-sm">
+              {loading
+                ? "Searching for jobs..."
+                : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-3">
           {loading ? (
-            <div className="space-y-3">
+            <div
+              className={twoColumns ? "grid grid-cols-2 gap-3" : "space-y-3"}
+            >
               {[1, 2, 3, 4, 5].map((i) => (
                 <JobCardSkeleton key={i} />
               ))}
             </div>
           ) : filteredJobs.length > 0 ? (
-            <div className="space-y-3">
+            <div
+              className={twoColumns ? "grid grid-cols-2 gap-3" : "space-y-3"}
+            >
               {filteredJobs.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div
+              className={twoColumns ? "grid grid-cols-2 gap-3" : "space-y-3"}
+            >
               {FAKE_JOBS.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}
