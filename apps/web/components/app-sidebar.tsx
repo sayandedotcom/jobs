@@ -27,6 +27,7 @@ import {
   BookmarkIcon,
   BellIcon,
   LayoutDashboardIcon,
+  PuzzleIcon,
 } from "lucide-react"
 
 export function AppSidebar({
@@ -69,6 +70,11 @@ export function AppSidebar({
       title: "Alerts",
       href: "/alerts",
       icon: <BellIcon className="size-4" />,
+    },
+    {
+      title: "Integrations",
+      href: "/integrations",
+      icon: <PuzzleIcon className="size-4" />,
     },
   ]
 
