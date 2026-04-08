@@ -23,6 +23,7 @@ interface ShootingStarsProps {
   starWidth?: number
   starHeight?: number
   className?: string
+  maxStars?: number
 }
 
 const getRandomStartPoint = () => {
@@ -42,6 +43,7 @@ const getRandomStartPoint = () => {
       return { x: 0, y: 0, angle: 45 }
   }
 }
+
 export const ShootingStars: React.FC<ShootingStarsProps> = ({
   minSpeed = 10,
   maxSpeed = 30,
@@ -52,15 +54,16 @@ export const ShootingStars: React.FC<ShootingStarsProps> = ({
   starWidth = 10,
   starHeight = 1,
   className,
+  maxStars = 3,
 }) => {
-  const [star, setStar] = useState<ShootingStar | null>(null)
+  const [stars, setStars] = useState<ShootingStar[]>([])
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
     const createStar = () => {
       const { x, y, angle } = getRandomStartPoint()
       const newStar: ShootingStar = {
-        id: Date.now(),
+        id: Date.now() + Math.random(),
         x,
         y,
         angle,
@@ -68,7 +71,7 @@ export const ShootingStars: React.FC<ShootingStarsProps> = ({
         speed: Math.random() * (maxSpeed - minSpeed) + minSpeed,
         distance: 0,
       }
-      setStar(newStar)
+      setStars((prev) => [...prev.slice(-(maxStars - 1)), newStar])
 
       const randomDelay = Math.random() * (maxDelay - minDelay) + minDelay
       setTimeout(createStar, randomDelay)
@@ -77,50 +80,48 @@ export const ShootingStars: React.FC<ShootingStarsProps> = ({
     createStar()
 
     return () => {}
-  }, [minSpeed, maxSpeed, minDelay, maxDelay])
+  }, [minSpeed, maxSpeed, minDelay, maxDelay, maxStars])
 
   useEffect(() => {
     const moveStar = () => {
-      if (star) {
-        setStar((prevStar) => {
-          if (!prevStar) return null
-          const newX =
-            prevStar.x +
-            prevStar.speed * Math.cos((prevStar.angle * Math.PI) / 180)
-          const newY =
-            prevStar.y +
-            prevStar.speed * Math.sin((prevStar.angle * Math.PI) / 180)
-          const newDistance = prevStar.distance + prevStar.speed
-          const newScale = 1 + newDistance / 100
-          if (
-            newX < -20 ||
-            newX > window.innerWidth + 20 ||
-            newY < -20 ||
-            newY > window.innerHeight + 20
-          ) {
-            return null
-          }
-          return {
-            ...prevStar,
-            x: newX,
-            y: newY,
-            distance: newDistance,
-            scale: newScale,
-          }
-        })
-      }
+      setStars(
+        (prev) =>
+          prev
+            .map((s) => {
+              const newX = s.x + s.speed * Math.cos((s.angle * Math.PI) / 180)
+              const newY = s.y + s.speed * Math.sin((s.angle * Math.PI) / 180)
+              const newDistance = s.distance + s.speed
+              const newScale = 1 + newDistance / 100
+              if (
+                newX < -20 ||
+                newX > window.innerWidth + 20 ||
+                newY < -20 ||
+                newY > window.innerHeight + 20
+              ) {
+                return null
+              }
+              return {
+                ...s,
+                x: newX,
+                y: newY,
+                distance: newDistance,
+                scale: newScale,
+              }
+            })
+            .filter(Boolean) as ShootingStar[]
+      )
     }
 
     const animationFrame = requestAnimationFrame(moveStar)
     return () => cancelAnimationFrame(animationFrame)
-  }, [star])
+  }, [stars])
 
   return (
     <svg
       ref={svgRef}
       className={cn("absolute inset-0 h-full w-full", className)}
     >
-      {star && (
+      {stars.map((star) => (
         <rect
           key={star.id}
           x={star.x}
@@ -132,7 +133,7 @@ export const ShootingStars: React.FC<ShootingStarsProps> = ({
             star.x + (starWidth * star.scale) / 2
           }, ${star.y + starHeight / 2})`}
         />
-      )}
+      ))}
       <defs>
         <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{ stopColor: trailColor, stopOpacity: 0 }} />

@@ -35,7 +35,7 @@ export function Hero() {
             Sign In
           </Button>
         </div>
-        <StarsBackground />
+        <StarsBackground starDensity={0.0004} />
       </header>
 
       <main className="flex flex-1 flex-col gap-6">
@@ -57,8 +57,8 @@ export function Hero() {
               {siteConfig.hero.heading} {siteConfig.hero.headingHighlight}
             </h1>
           </div>
-          <ShootingStars />
-          <StarsBackground />
+          <ShootingStars maxStars={5} minDelay={600} maxDelay={2000} />
+          <StarsBackground starDensity={0.0004} />
         </section>
         {/* <section>
           <div className="relative">

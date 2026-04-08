@@ -66,7 +66,7 @@ function ParallaxNode({
             alt={node.source.name}
             width={40}
             height={40}
-            className="size-full"
+            className="size-full bg-black"
           />
         </Square>
       </a>

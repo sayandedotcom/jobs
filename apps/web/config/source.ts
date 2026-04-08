@@ -224,12 +224,12 @@ export const source: Source[] = [
     active: true,
     url: "https://recruitee.com",
   },
-  // {
-  //   index: 28,
-  //   id: "authenticjobs",
-  //   name: "Authentic Jobs",
-  //   src: "https://cdn.brandfetch.io/idhfy_NHYG/theme/light/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1763168112055",
-  //   active: true,
-  //   url: "https://authenticjobs.com",
-  // },
+  {
+    index: 28,
+    id: "authenticjobs",
+    name: "Authentic Jobs",
+    src: "https://cdn.brandfetch.io/idhfy_NHYG/theme/light/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1763168112055",
+    active: true,
+    url: "https://authenticjobs.com",
+  },
 ]
