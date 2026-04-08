@@ -15,11 +15,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
-import { ChevronLeftIcon, ChevronRightIcon, LayoutGridIcon } from "lucide-react"
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  LayoutGridIcon,
+  ClockIcon,
+  PuzzleIcon,
+} from "lucide-react"
 import { api, type Listing } from "@/lib/api-client"
 import { authClient } from "@/lib/auth-client"
 import { useQueryFilters } from "@/hooks/use-query-filters"
 import { useCookieState } from "@/hooks/use-cookie-state"
+import { source } from "@/config/source"
+import { Badge } from "@workspace/ui/components/badge"
 
 const FAKE_JOBS: Listing[] = [
   {
@@ -405,7 +413,7 @@ function JobsPageContent() {
           <div className="mx-auto w-full max-w-2xl">
             <JobSearchBar search={search} onSearchChange={setSearch} />
           </div>
-          <div className="mt-3 flex items-center justify-between">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <TooltipProvider delay={300}>
               <Tooltip>
                 <TooltipTrigger
@@ -426,10 +434,26 @@ function JobsPageContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <p className="text-muted-foreground text-sm">
-              {loading
-                ? "Searching for jobs..."
-                : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
+            <p className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm">
+              <a
+                href="/integrations"
+                className="hover:text-foreground/80 underline underline-offset-4 transition-colors"
+              >
+                Last fetch 15hr ago · Next in 4h
+              </a>
+              <span>•</span>
+              <a
+                href="/integrations"
+                className="hover:text-foreground/80 underline underline-offset-4 transition-colors"
+              >
+                {source.filter((s) => s.active).length} sources active
+              </a>
+              <span>•</span>
+              <span>
+                {loading
+                  ? "Searching for jobs..."
+                  : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
+              </span>
             </p>
           </div>
         </div>
