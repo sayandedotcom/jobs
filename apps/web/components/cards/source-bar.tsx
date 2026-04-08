@@ -20,31 +20,46 @@ const SOURCE_LABEL_SUFFIX: Record<string, string> = {
 
 export function SourceBar({
   sourceName,
+  sourceUrl,
   saved,
   onSave,
 }: {
   sourceName: string | null
+  sourceUrl?: string
   saved: boolean
   onSave: (e: React.MouseEvent) => void
 }) {
   const src = getSourceConfig(sourceName)
   const suffix = sourceName ? SOURCE_LABEL_SUFFIX[sourceName] : null
+  const href = sourceUrl || src?.url
   return (
     <div className="flex items-center justify-between px-4 pb-2">
       {src && (
-        <Badge variant="outline" className="gap-2 px-3 py-2 text-sm">
-          <img
-            src={src.src}
-            alt={src.name}
-            className="size-5 rounded-sm object-contain"
-          />
-          <span className="text-muted-foreground text-sm font-medium">
-            {src.name}
-            {suffix && (
-              <span className="text-muted-foreground/70 ml-1">({suffix})</span>
-            )}
-          </span>
-        </Badge>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block"
+        >
+          <Badge
+            variant="outline"
+            className="hover:bg-accent/50 cursor-pointer gap-2 px-3 py-1.5 text-sm transition-colors"
+          >
+            <img
+              src={src.src}
+              alt={src.name}
+              className="size-4 rounded-sm object-contain"
+            />
+            <span className="text-muted-foreground text-sm font-medium">
+              {src.name}
+              {suffix && (
+                <span className="text-muted-foreground/70 ml-1">
+                  ({suffix})
+                </span>
+              )}
+            </span>
+          </Badge>
+        </a>
       )}
       <SaveButton saved={saved} onClick={onSave} />
     </div>
