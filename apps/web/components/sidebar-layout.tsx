@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
+import { Toaster } from "@workspace/ui/components/sonner"
 
 export function SidebarLayout({
   user,
@@ -23,6 +24,7 @@ export function SidebarLayout({
       <SidebarInset className="h-svh overflow-y-auto">
         <div className="flex flex-col gap-4 px-4 pt-4 pb-4">{children}</div>
       </SidebarInset>
+      <Toaster position="bottom-right" />
     </SidebarProvider>
   )
 }
