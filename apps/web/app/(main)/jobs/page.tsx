@@ -4,8 +4,7 @@ import * as React from "react"
 import { JobCard, JobCardSkeleton } from "@/components/cards"
 import {
   JobSearchBar,
-  FilterSidebarProvider,
-  FilterSidebar,
+  FilterPanel,
   sourceIdToSourceName,
 } from "@/components/job-filters"
 import { Button } from "@workspace/ui/components/button"
@@ -19,7 +18,6 @@ import { LayoutGridIcon, LoaderIcon } from "lucide-react"
 import { useQueryFilters } from "@/hooks/use-query-filters"
 import { useCookieState } from "@/hooks/use-cookie-state"
 import { useInfiniteJobs } from "@/hooks/use-infinite-jobs"
-import { useSidebar } from "@workspace/ui/components/sidebar"
 import { source } from "@/config/source"
 
 export default function JobsPage() {
@@ -27,7 +25,7 @@ export default function JobsPage() {
     <React.Suspense
       fallback={
         <div className="-mt-4 flex flex-col">
-          <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pt-4 pb-2">
+          <div className="bg-background sticky top-0 z-10 -ml-4 pt-4 pr-4 pb-2 pl-4">
             <div className="bg-muted mx-auto h-11 w-full max-w-2xl animate-pulse rounded-md" />
             <p className="text-muted-foreground mt-3 text-sm">
               Loading filters...
@@ -76,30 +74,9 @@ function JobsPageContent() {
     selectedExperience,
     selectedDates,
     setSearch,
-    setLocation,
-    setSelectedSources,
-    setSelectedWorkModes,
-    setSelectedJobTypes,
-    setSelectedExperience,
-    setSelectedDates,
     clearAll,
+    setAllFilters,
   } = useQueryFilters()
-
-  const { state: filterSidebarState } = useSidebar()
-
-  React.useEffect(() => {
-    const inset = document.querySelector(
-      '[data-slot="sidebar-inset"]'
-    ) as HTMLElement | null
-    if (!inset) return
-    const width = filterSidebarState === "expanded" ? "20rem" : "3rem"
-    inset.style.transition = "margin-right 200ms linear"
-    inset.style.marginRight = width
-    return () => {
-      inset.style.marginRight = ""
-      inset.style.transition = ""
-    }
-  }, [filterSidebarState])
 
   const [twoColumns, setTwoColumns] = useCookieState<boolean>(
     "jobs-grid-view",
@@ -186,8 +163,8 @@ function JobsPageContent() {
       : total
 
   return (
-    <FilterSidebarProvider>
-      <div className="-mt-4 flex flex-1 flex-col">
+    <div className="-mt-4 -mr-4 flex flex-1">
+      <div className="flex-1 overflow-y-auto px-4">
         <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pt-4 pb-2">
           <div className="mx-auto w-full max-w-2xl">
             <JobSearchBar search={search} onSearchChange={setSearch} />
@@ -260,7 +237,7 @@ function JobsPageContent() {
             </div>
           )}
 
-          {hasNextPage && (
+          {hasNextPage && filteredJobs.length > 0 && (
             <div ref={sentinelRef} className="flex justify-center py-4">
               {isFetchingNextPage && (
                 <LoaderIcon className="text-muted-foreground size-5 animate-spin" />
@@ -269,21 +246,16 @@ function JobsPageContent() {
           )}
         </div>
       </div>
-      <FilterSidebar
+      <FilterPanel
         location={location}
         selectedSources={selectedSources}
         selectedWorkModes={selectedWorkModes}
         selectedJobTypes={selectedJobTypes}
         selectedExperience={selectedExperience}
         selectedDates={selectedDates}
-        onLocationChange={setLocation}
-        onSelectedSourcesChange={setSelectedSources}
-        onSelectedWorkModesChange={setSelectedWorkModes}
-        onSelectedJobTypesChange={setSelectedJobTypes}
-        onSelectedExperienceChange={setSelectedExperience}
-        onSelectedDatesChange={setSelectedDates}
         onClearAll={clearAll}
+        onApply={setAllFilters}
       />
-    </FilterSidebarProvider>
+    </div>
   )
 }
