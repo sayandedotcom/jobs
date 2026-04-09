@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from pipeline.state import RawPostData
+if TYPE_CHECKING:
+    from pipeline.state import RawPostData
 
 
 class BaseSource(ABC):
@@ -22,6 +26,11 @@ class BaseSource(ABC):
 
     Each source maps to a row in the 'sources' DB table, and its sub-sources
     (e.g., subreddits for Reddit, job boards for Indeed) are stored in 'sub_sources'.
+
+    Behavioral hooks (override in subclasses for custom pipeline behavior):
+        - skip_keyword_filter: Return True to bypass keyword filtering (e.g., HN)
+        - use_embedding_dedup: Return False to use exact-only dedup (e.g., HN)
+        - build_listing_payload: Customize how post data maps to a DB listing row
     """
 
     @abstractmethod
@@ -50,3 +59,60 @@ class BaseSource(ABC):
         and the key in SOURCE_CONFIGS.
         """
         ...
+
+    def skip_keyword_filter(self) -> bool:
+        """Whether to bypass keyword-based filtering for this source.
+
+        Override to return True for sources where all posts are known to be job-related
+        (e.g., HN "Who is Hiring?" threads where every comment is a job post).
+        """
+        return False
+
+    def use_embedding_dedup(self) -> bool:
+        """Whether to use embedding-based fuzzy dedup for this source.
+
+        Override to return False for sources that already have unique external IDs
+        and don't benefit from expensive embedding comparisons.
+        """
+        return True
+
+    def build_listing_payload(self, post: RawPostData, item: dict) -> dict:
+        """Build the listing DB row payload from a raw post.
+
+        Override to customize title derivation, metadata enrichment, or field mapping.
+        Default implementation derives the title from the first line of raw_content.
+
+        Args:
+            post: The raw post data from the source.
+            item: Dict with 'embedding_text' key from the dedup step.
+
+        Returns:
+            Dict with keys: title, company, description, location, salary, url,
+            jobType, applyUrl, embeddingText, metadata.
+        """
+        metadata = dict(post.get("metadata") or {})
+        return {
+            "title": _derive_title(post["raw_content"]),
+            "company": post.get("author") or "Unknown",
+            "description": post["raw_content"],
+            "location": None,
+            "salary": None,
+            "url": post.get("permalink"),
+            "jobType": None,
+            "applyUrl": None,
+            "embeddingText": item.get("embedding_text"),
+            "metadata": metadata,
+        }
+
+
+def _derive_title(raw_content: str) -> str:
+    first_line = raw_content.split("\n", 1)[0].strip()
+    if first_line.startswith("Title:"):
+        first_line = first_line[len("Title:") :].strip()
+    return _truncate_title(first_line or "Untitled")
+
+
+def _truncate_title(value: str) -> str:
+    if len(value) > 150:
+        return value[:147] + "..."
+    return value

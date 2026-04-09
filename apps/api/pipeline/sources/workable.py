@@ -1,27 +1,11 @@
-import re
 from contextlib import suppress
 from datetime import datetime
 
 import httpx
 from pipeline.sources.base import BaseSource
 from pipeline.sources.registry import register_source
+from pipeline.sources.utils import html_to_plain
 from pipeline.state import RawPostData
-
-
-def _html_to_plain(html: str) -> str:
-    """Strip HTML tags to get plain text from Workable job descriptions."""
-    text = html
-    for tag in ("</p>", "</li>", "</div>", "<br>", "<br/>", "<br />"):
-        text = text.replace(tag, "\n")
-    text = re.sub(r"<[^>]+>", "", text)
-    text = text.replace("&amp;", "&")
-    text = text.replace("&lt;", "<")
-    text = text.replace("&gt;", ">")
-    text = text.replace("&nbsp;", " ")
-    text = text.replace("&#39;", "'")
-    text = text.replace("&quot;", '"')
-    lines = [line.strip() for line in text.splitlines()]
-    return "\n".join(line for line in lines if line)
 
 
 @register_source
@@ -143,14 +127,14 @@ class WorkableService(BaseSource):
                 title = job.get("title", "")
                 description_html = job.get("description", "")
                 description = (
-                    _html_to_plain(description_html) if description_html else ""
+                    html_to_plain(description_html) if description_html else ""
                 )
                 requirements_html = job.get("requirementsSection", "")
                 requirements = (
-                    _html_to_plain(requirements_html) if requirements_html else ""
+                    html_to_plain(requirements_html) if requirements_html else ""
                 )
                 benefits_html = job.get("benefitsSection", "")
-                benefits = _html_to_plain(benefits_html) if benefits_html else ""
+                benefits = html_to_plain(benefits_html) if benefits_html else ""
 
                 location = job.get("location", {})
                 location_str = ""

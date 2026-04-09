@@ -9,6 +9,7 @@ from core.database import get_pool
 from core.utils import cuid
 from pipeline.source_configs import get_source_config
 from pipeline.sources.registry import get_source
+from pipeline.sources.utils import cosine_similarity
 
 STALE_THRESHOLD_HOURS = 2
 
@@ -266,7 +267,7 @@ async def _dedup_posts(posts: list[dict]) -> list[dict]:
         is_dup = False
         for i, _row in enumerate(existing_rows):
             if i < len(existing_embeddings):
-                score = _cosine_similarity(new_embedding, existing_embeddings[i])
+                score = cosine_similarity(new_embedding, existing_embeddings[i])
                 if score >= SIMILARITY_THRESHOLD:
                     is_dup = True
                     break
@@ -274,15 +275,6 @@ async def _dedup_posts(posts: list[dict]) -> list[dict]:
             unique.append(post)
 
     return unique
-
-
-def _cosine_similarity(a: list[float], b: list[float]) -> float:
-    dot = sum(x * y for x, y in zip(a, b, strict=True))
-    mag_a = sum(x * x for x in a) ** 0.5
-    mag_b = sum(x * x for x in b) ** 0.5
-    if mag_a == 0 or mag_b == 0:
-        return 0.0
-    return dot / (mag_a * mag_b)
 
 
 async def _store_listings(posts: list[dict], source_name: str) -> list[str]:

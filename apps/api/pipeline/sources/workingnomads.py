@@ -1,4 +1,3 @@
-import re
 import xml.etree.ElementTree as ET
 from contextlib import suppress
 from datetime import datetime
@@ -6,22 +5,8 @@ from datetime import datetime
 import httpx
 from pipeline.sources.base import BaseSource
 from pipeline.sources.registry import register_source
+from pipeline.sources.utils import html_to_plain
 from pipeline.state import RawPostData
-
-
-def _html_to_plain(html: str) -> str:
-    text = html
-    for tag in ("</p>", "</li>", "</div>", "<br>", "<br/>", "<br />"):
-        text = text.replace(tag, "\n")
-    text = re.sub(r"<[^>]+>", "", text)
-    text = text.replace("&amp;", "&")
-    text = text.replace("&lt;", "<")
-    text = text.replace("&gt;", ">")
-    text = text.replace("&nbsp;", " ")
-    text = text.replace("&#39;", "'")
-    text = text.replace("&quot;", '"')
-    lines = [line.strip() for line in text.splitlines()]
-    return "\n".join(line for line in lines if line)
 
 
 CATEGORIES = [
@@ -168,7 +153,7 @@ class WorkingnomadsService(BaseSource):
 
             title = item.get("title", "")
             description_html = item.get("description", "")
-            description = _html_to_plain(description_html) if description_html else ""
+            description = html_to_plain(description_html) if description_html else ""
 
             raw_parts = [f"Title: {title}"]
             raw_parts.append(f"Category: {category}")

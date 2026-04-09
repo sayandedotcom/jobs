@@ -4,25 +4,8 @@ from datetime import datetime
 import httpx
 from pipeline.sources.base import BaseSource
 from pipeline.sources.registry import register_source
+from pipeline.sources.utils import html_to_plain
 from pipeline.state import RawPostData
-
-
-def _html_to_plain(html: str) -> str:
-    """Strip HTML tags to get plain text from Greenhouse job descriptions."""
-    text = html
-    for tag in ("</p>", "</li>", "</div>", "<br>", "<br/>", "<br />"):
-        text = text.replace(tag, "\n")
-    import re
-
-    text = re.sub(r"<[^>]+>", "", text)
-    text = text.replace("&amp;", "&")
-    text = text.replace("&lt;", "<")
-    text = text.replace("&gt;", ">")
-    text = text.replace("&nbsp;", " ")
-    text = text.replace("&#39;", "'")
-    text = text.replace("&quot;", '"')
-    lines = [line.strip() for line in text.splitlines()]
-    return "\n".join(line for line in lines if line)
 
 
 @register_source
@@ -123,7 +106,7 @@ class GreenhouseService(BaseSource):
                     location.get("name", "") if isinstance(location, dict) else ""
                 )
                 content_html = job.get("content", "")
-                description = _html_to_plain(content_html) if content_html else ""
+                description = html_to_plain(content_html) if content_html else ""
 
                 raw_parts = [f"Title: {title}"]
                 if location_name:

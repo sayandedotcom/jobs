@@ -9,7 +9,7 @@ import pipeline.sources.arbeitnow  # noqa: F401
 import pipeline.sources.ashbyhq  # noqa: F401
 import pipeline.sources.authenticjobs  # noqa: F401
 import pipeline.sources.greenhouse  # noqa: F401
-import pipeline.sources.hackernews  # noqa: F401
+import pipeline.sources.hackernews.source  # noqa: F401
 import pipeline.sources.himalayas  # noqa: F401
 import pipeline.sources.jobicy  # noqa: F401
 import pipeline.sources.lever  # noqa: F401
