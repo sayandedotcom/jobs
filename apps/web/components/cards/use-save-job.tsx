@@ -24,6 +24,7 @@ export function useSaveJob(job: Listing) {
         setSaved(true)
         toast.success("Job bookmarked")
       } else {
+        await api.saved.deleteByListing(job.id)
         setSaved(false)
         toast.success("Removed from bookmarks")
       }

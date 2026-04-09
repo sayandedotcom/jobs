@@ -167,6 +167,18 @@ async def update_saved_job(
     )
 
 
+@router.delete("/by-listing/{listing_id}", status_code=204)
+async def delete_saved_job_by_listing(listing_id: str, userId: str = Query(...)):
+    pool = await get_pool()
+    result = await pool.execute(
+        """DELETE FROM user_saved_jobs WHERE "listingId" = $1 AND "userId" = $2""",
+        listing_id,
+        userId,
+    )
+    if result == "DELETE 0":
+        raise HTTPException(status_code=404, detail="Saved job not found")
+
+
 @router.delete("/{saved_id}", status_code=204)
 async def delete_saved_job(saved_id: str, userId: str = Query(...)):
     pool = await get_pool()
