@@ -1,124 +1,91 @@
 "use client"
 
 import * as React from "react"
-import { api, type UserSavedJob } from "@/lib/api-client"
+import { api } from "@/lib/api-client"
 import { authClient } from "@/lib/auth-client"
-import { BookmarkIcon } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card"
-import { Badge } from "@workspace/ui/components/badge"
+import { BookmarkIcon, LayoutGridIcon } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
-import { Skeleton } from "@workspace/ui/components/skeleton"
-
-function SavedJobSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-4 w-1/3" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-5 w-16 rounded-full" />
-            <Skeleton className="h-4 w-14" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-3 w-1/2" />
-      </CardContent>
-    </Card>
-  )
-}
+import { JobCard, JobCardSkeleton } from "@/components/cards"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
+import { useCookieState } from "@/hooks/use-cookie-state"
+import type { Listing } from "@/lib/api-client"
 
 export default function SavedPage() {
   const { data: session } = authClient.useSession()
-  const [savedJobs, setSavedJobs] = React.useState<UserSavedJob[]>([])
+  const [jobs, setJobs] = React.useState<Listing[]>([])
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
     api.saved
       .list()
-      .then(setSavedJobs)
+      .then((saved) => saved.map((s) => s.listing))
+      .then(setJobs)
       .finally(() => setLoading(false))
   }, [])
 
-  const handleRemove = async (savedId: string) => {
-    try {
-      await api.saved.delete(savedId)
-      setSavedJobs((prev) => prev.filter((j) => j.id !== savedId))
-    } catch {
-      // ignore
-    }
-  }
+  const [twoColumns, setTwoColumns] = useCookieState<boolean>(
+    "saved-grid-view",
+    false,
+    { serialize: (v) => String(v), deserialize: (v) => v === "true" }
+  )
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Saved Jobs</h1>
+      <div className="flex items-center">
+        <h1 className="text-2xl font-bold">Saved Jobs</h1>
+      </div>
       <Separator />
 
       {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <SavedJobSkeleton key={i} />
+        <div className={twoColumns ? "grid grid-cols-2 gap-3" : "space-y-3"}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <JobCardSkeleton key={i} />
           ))}
         </div>
-      ) : savedJobs.length === 0 ? (
+      ) : jobs.length === 0 ? (
         <div className="text-muted-foreground flex flex-col items-center gap-4 py-12 text-center">
           <BookmarkIcon className="size-12 opacity-20" />
           <p>No saved jobs yet. Browse jobs and save the ones you like.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {savedJobs.map((saved) => (
-            <Card key={saved.id} className="transition-colors">
-              <a href={`/jobs/${saved.listingId}`} className="block">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="leading-tight">
-                        {saved.listing.title}
-                      </CardTitle>
-                      <p className="text-muted-foreground mt-1 text-sm">
-                        {saved.listing.company}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {saved.status}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleRemove(saved.id)
-                        }}
-                        className="text-muted-foreground hover:text-destructive text-xs"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                {saved.notes && (
-                  <CardContent>
-                    <p className="text-muted-foreground text-xs">
-                      {saved.notes}
-                    </p>
-                  </CardContent>
-                )}
-              </a>
-            </Card>
-          ))}
-        </div>
+        <>
+          <div className="flex items-center justify-between">
+            <TooltipProvider delay={300}>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant={twoColumns ? "default" : "outline"}
+                      size="icon-sm"
+                      className="shrink-0 cursor-pointer"
+                      onClick={() => setTwoColumns((v) => !v)}
+                      aria-label="Toggle grid view"
+                    >
+                      <LayoutGridIcon className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>
+                  {twoColumns ? "Single column" : "Two columns"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <p className="text-muted-foreground text-sm">
+              {jobs.length} saved job{jobs.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className={twoColumns ? "grid grid-cols-2 gap-3" : "space-y-3"}>
+            {jobs.map((job) => (
+              <JobCard key={job.id} job={{ ...job, isSaved: true }} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
