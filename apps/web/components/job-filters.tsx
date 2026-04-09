@@ -3,19 +3,6 @@
 import * as React from "react"
 import { Input } from "@workspace/ui/components/input"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarRail,
-  useSidebar,
-} from "@workspace/ui/components/sidebar"
-import {
   MultiSelect,
   type MultiSelectOption,
 } from "@workspace/ui/components/multi-select"
@@ -29,11 +16,11 @@ import {
   CalendarIcon,
   TrendingUpIcon,
   XIcon,
-  PanelRightIcon,
 } from "lucide-react"
 import { source } from "@/config/source"
 import { sourceIdToSourceName } from "@/lib/source-mapping"
 import { Button } from "@workspace/ui/components/button"
+import { Separator } from "@workspace/ui/components/separator"
 
 const SOURCE_OPTIONS: MultiSelectOption[] = source
   .filter((s) => s.active)
@@ -107,6 +94,14 @@ interface JobFiltersProps {
   onSelectedExperienceChange: (values: string[]) => void
   onSelectedDatesChange: (values: string[]) => void
   onClearAll?: () => void
+  onApply?: (filters: {
+    location: string
+    sources: string[]
+    workModes: string[]
+    jobTypes: string[]
+    experience: string[]
+    dates: string[]
+  }) => void
 }
 
 function JobSearchBar({
@@ -162,287 +157,266 @@ function JobSearchBar({
   )
 }
 
-function FilterSidebarProvider({ children }: { children: React.ReactNode }) {
+function FilterItem({
+  icon: Icon,
+  label,
+  selected,
+  onSelectedChange,
+  children,
+}: {
+  icon: React.ElementType
+  label: string
+  selected: string[]
+  onSelectedChange: (values: string[]) => void
+  children?: React.ReactNode
+}) {
   return (
-    <SidebarProvider
-      style={{ "--sidebar-width": "20rem" } as React.CSSProperties}
-    >
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Icon className="size-4" />
+          <span>{label}</span>
+        </div>
+        {selected.length > 0 && (
+          <button
+            onClick={() => onSelectedChange([])}
+            className="text-muted-foreground hover:text-foreground cursor-pointer text-xs transition-colors"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
       {children}
-    </SidebarProvider>
+    </div>
   )
 }
 
-function FilterSidebarTriggerButton() {
-  const { toggleSidebar } = useSidebar()
-  return (
-    <Button
-      data-sidebar="trigger"
-      variant="ghost"
-      size="icon-sm"
-      className="shrink-0 cursor-pointer group-data-[collapsible=icon]:hidden"
-      onClick={toggleSidebar}
-    >
-      <PanelRightIcon />
-    </Button>
-  )
+function arraysEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false
+  return a.every((v, i) => v === b[i])
 }
 
-function FilterSidebarCollapsedTrigger() {
-  const { toggleSidebar } = useSidebar()
-  return (
-    <Button
-      data-sidebar="trigger"
-      variant="ghost"
-      size="icon-sm"
-      className="invisible col-start-1 row-start-1 cursor-pointer group-hover/icon:visible"
-      onClick={toggleSidebar}
-    >
-      <PanelRightIcon />
-    </Button>
-  )
-}
-
-function FilterSidebarTrigger() {
-  const { toggleSidebar } = useSidebar()
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={toggleSidebar}
-      className="h-11 w-11 shrink-0"
-    >
-      <FilterIcon className="size-4" />
-    </Button>
-  )
-}
-
-function FilterSidebar({
+function FilterPanel({
   location,
   selectedSources,
   selectedWorkModes,
   selectedJobTypes,
   selectedExperience,
   selectedDates,
-  onLocationChange,
-  onSelectedSourcesChange,
-  onSelectedWorkModesChange,
-  onSelectedJobTypesChange,
-  onSelectedExperienceChange,
-  onSelectedDatesChange,
   onClearAll,
-}: Omit<JobFiltersProps, "search" | "onSearchChange">) {
-  const hasFilters =
-    location ||
-    selectedSources.length > 0 ||
-    selectedWorkModes.length > 0 ||
-    selectedJobTypes.length > 0 ||
-    selectedExperience.length > 0 ||
-    selectedDates.length > 0
+  onApply,
+}: Omit<
+  JobFiltersProps,
+  | "search"
+  | "onSearchChange"
+  | "onLocationChange"
+  | "onSelectedSourcesChange"
+  | "onSelectedWorkModesChange"
+  | "onSelectedJobTypesChange"
+  | "onSelectedExperienceChange"
+  | "onSelectedDatesChange"
+>) {
+  const [draftLocation, setDraftLocation] = React.useState(location)
+  const [draftSources, setDraftSources] = React.useState(selectedSources)
+  const [draftWorkModes, setDraftWorkModes] = React.useState(selectedWorkModes)
+  const [draftJobTypes, setDraftJobTypes] = React.useState(selectedJobTypes)
+  const [draftExperience, setDraftExperience] =
+    React.useState(selectedExperience)
+  const [draftDates, setDraftDates] = React.useState(selectedDates)
+
+  const committedRef = React.useRef({
+    location,
+    selectedSources,
+    selectedWorkModes,
+    selectedJobTypes,
+    selectedExperience,
+    selectedDates,
+  })
+
+  if (
+    location !== committedRef.current.location ||
+    !arraysEqual(selectedSources, committedRef.current.selectedSources) ||
+    !arraysEqual(selectedWorkModes, committedRef.current.selectedWorkModes) ||
+    !arraysEqual(selectedJobTypes, committedRef.current.selectedJobTypes) ||
+    !arraysEqual(selectedExperience, committedRef.current.selectedExperience) ||
+    !arraysEqual(selectedDates, committedRef.current.selectedDates)
+  ) {
+    committedRef.current = {
+      location,
+      selectedSources,
+      selectedWorkModes,
+      selectedJobTypes,
+      selectedExperience,
+      selectedDates,
+    }
+    setDraftLocation(location)
+    setDraftSources(selectedSources)
+    setDraftWorkModes(selectedWorkModes)
+    setDraftJobTypes(selectedJobTypes)
+    setDraftExperience(selectedExperience)
+    setDraftDates(selectedDates)
+  }
+
+  const isDirty =
+    draftLocation !== location ||
+    !arraysEqual(draftSources, selectedSources) ||
+    !arraysEqual(draftWorkModes, selectedWorkModes) ||
+    !arraysEqual(draftJobTypes, selectedJobTypes) ||
+    !arraysEqual(draftExperience, selectedExperience) ||
+    !arraysEqual(draftDates, selectedDates)
+
+  const hasAnyFilter =
+    draftLocation ||
+    draftSources.length > 0 ||
+    draftWorkModes.length > 0 ||
+    draftJobTypes.length > 0 ||
+    draftExperience.length > 0 ||
+    draftDates.length > 0
+
+  const apply = React.useCallback(() => {
+    onApply?.({
+      location: draftLocation,
+      sources: draftSources,
+      workModes: draftWorkModes,
+      jobTypes: draftJobTypes,
+      experience: draftExperience,
+      dates: draftDates,
+    })
+  }, [
+    draftLocation,
+    draftSources,
+    draftWorkModes,
+    draftJobTypes,
+    draftExperience,
+    draftDates,
+    onApply,
+  ])
+
+  const clearDraftAndApply = React.useCallback(() => {
+    setDraftLocation("")
+    setDraftSources([])
+    setDraftWorkModes([])
+    setDraftJobTypes([])
+    setDraftExperience([])
+    setDraftDates([])
+    onClearAll?.()
+  }, [onClearAll])
 
   return (
-    <Sidebar side="right" variant="sidebar" collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex items-center gap-2">
-              <SidebarMenuButton
-                size="lg"
-                tooltip="Filters"
-                className="flex-1 group-data-[collapsible=icon]:hidden"
-              >
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <FilterIcon className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Filters</span>
-                </div>
-              </SidebarMenuButton>
-              <div className="group/icon relative hidden size-8 place-items-center group-data-[collapsible=icon]:grid">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground col-start-1 row-start-1 flex size-8 items-center justify-center rounded-lg group-hover/icon:invisible">
-                  <FilterIcon className="size-4" />
-                </div>
-                <FilterSidebarCollapsedTrigger />
-              </div>
-              <FilterSidebarTriggerButton />
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Filter by Date Posted">
-                <CalendarIcon className="size-4" />
-                <span>Date Posted</span>
-              </SidebarMenuButton>
-              <div className="group-data-[collapsible=icon]:hidden">
-                <div className="flex items-center justify-between px-2 pb-1">
-                  {selectedDates.length > 0 && (
-                    <button
-                      onClick={() => onSelectedDatesChange([])}
-                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground cursor-pointer text-xs transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-                <div className="px-2 pb-3">
-                  <MultiSelect
-                    options={DATE_OPTIONS}
-                    selected={selectedDates}
-                    onSelectedChange={onSelectedDatesChange}
-                    placeholder="All dates"
-                  />
-                </div>
-              </div>
-            </SidebarMenuItem>
+    <aside className="bg-card sticky top-0 flex h-svh w-72 shrink-0 flex-col overflow-y-auto border-l p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
+          <FilterIcon className="size-4" />
+        </div>
+        <span className="text-sm font-semibold">Filters</span>
+      </div>
+      <Separator />
 
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Filter by Source">
-                <LinkIcon className="size-4" />
-                <span>Source</span>
-              </SidebarMenuButton>
-              <div className="group-data-[collapsible=icon]:hidden">
-                <div className="flex items-center justify-between px-2 pb-1">
-                  {selectedSources.length > 0 && (
-                    <button
-                      onClick={() => onSelectedSourcesChange([])}
-                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground cursor-pointer text-xs transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-                <div className="px-2 pb-3">
-                  <MultiSelect
-                    options={SOURCE_OPTIONS}
-                    selected={selectedSources}
-                    onSelectedChange={onSelectedSourcesChange}
-                    placeholder="All sources"
-                  />
-                </div>
-              </div>
-            </SidebarMenuItem>
+      <div className="my-4 flex flex-col gap-4">
+        <FilterItem
+          icon={CalendarIcon}
+          label="Date Posted"
+          selected={draftDates}
+          onSelectedChange={setDraftDates}
+        >
+          <MultiSelect
+            options={DATE_OPTIONS}
+            selected={draftDates}
+            onSelectedChange={setDraftDates}
+            placeholder="All dates"
+          />
+        </FilterItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Filter by Work Mode">
-                <GlobeIcon className="size-4" />
-                <span>Work Mode</span>
-              </SidebarMenuButton>
-              <div className="group-data-[collapsible=icon]:hidden">
-                <div className="flex items-center justify-between px-2 pb-1">
-                  {selectedWorkModes.length > 0 && (
-                    <button
-                      onClick={() => onSelectedWorkModesChange([])}
-                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground cursor-pointer text-xs transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-                <div className="px-2 pb-3">
-                  <MultiSelect
-                    options={WORK_MODE_OPTIONS}
-                    selected={selectedWorkModes}
-                    onSelectedChange={onSelectedWorkModesChange}
-                    placeholder="All modes"
-                  />
-                </div>
-              </div>
-            </SidebarMenuItem>
+        <FilterItem
+          icon={LinkIcon}
+          label="Source"
+          selected={draftSources}
+          onSelectedChange={setDraftSources}
+        >
+          <MultiSelect
+            options={SOURCE_OPTIONS}
+            selected={draftSources}
+            onSelectedChange={setDraftSources}
+            placeholder="All sources"
+          />
+        </FilterItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Filter by Job Type">
-                <BriefcaseIcon className="size-4" />
-                <span>Job Type</span>
-              </SidebarMenuButton>
-              <div className="group-data-[collapsible=icon]:hidden">
-                <div className="flex items-center justify-between px-2 pb-1">
-                  {selectedJobTypes.length > 0 && (
-                    <button
-                      onClick={() => onSelectedJobTypesChange([])}
-                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground cursor-pointer text-xs transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-                <div className="px-2 pb-3">
-                  <MultiSelect
-                    options={JOB_TYPE_OPTIONS}
-                    selected={selectedJobTypes}
-                    onSelectedChange={onSelectedJobTypesChange}
-                    placeholder="All types"
-                  />
-                </div>
-              </div>
-            </SidebarMenuItem>
+        <FilterItem
+          icon={GlobeIcon}
+          label="Work Mode"
+          selected={draftWorkModes}
+          onSelectedChange={setDraftWorkModes}
+        >
+          <MultiSelect
+            options={WORK_MODE_OPTIONS}
+            selected={draftWorkModes}
+            onSelectedChange={setDraftWorkModes}
+            placeholder="All modes"
+          />
+        </FilterItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Filter by Experience">
-                <TrendingUpIcon className="size-4" />
-                <span>Experience Level</span>
-              </SidebarMenuButton>
-              <div className="group-data-[collapsible=icon]:hidden">
-                <div className="flex items-center justify-between px-2 pb-1">
-                  {selectedExperience.length > 0 && (
-                    <button
-                      onClick={() => onSelectedExperienceChange([])}
-                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground cursor-pointer text-xs transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-                <div className="px-2 pb-3">
-                  <MultiSelect
-                    options={EXPERIENCE_OPTIONS}
-                    selected={selectedExperience}
-                    onSelectedChange={onSelectedExperienceChange}
-                    placeholder="All levels"
-                  />
-                </div>
-              </div>
-            </SidebarMenuItem>
+        <FilterItem
+          icon={BriefcaseIcon}
+          label="Job Type"
+          selected={draftJobTypes}
+          onSelectedChange={setDraftJobTypes}
+        >
+          <MultiSelect
+            options={JOB_TYPE_OPTIONS}
+            selected={draftJobTypes}
+            onSelectedChange={setDraftJobTypes}
+            placeholder="All types"
+          />
+        </FilterItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Filter by Location">
-                <MapPinIcon className="size-4" />
-                <span>Location</span>
-              </SidebarMenuButton>
-              <div className="px-2 pb-3 group-data-[collapsible=icon]:hidden">
-                <Input
-                  placeholder="e.g. NYC, Berlin"
-                  value={location}
-                  onChange={(e) => onLocationChange(e.target.value)}
-                />
-              </div>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent>
-      {hasFilters && (
-        <SidebarFooter className="border-t px-4 py-3">
+        <FilterItem
+          icon={TrendingUpIcon}
+          label="Experience Level"
+          selected={draftExperience}
+          onSelectedChange={setDraftExperience}
+        >
+          <MultiSelect
+            options={EXPERIENCE_OPTIONS}
+            selected={draftExperience}
+            onSelectedChange={setDraftExperience}
+            placeholder="All levels"
+          />
+        </FilterItem>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <MapPinIcon className="size-4" />
+            <span>Location</span>
+          </div>
+          <Input
+            placeholder="e.g. NYC, Berlin"
+            value={draftLocation}
+            onChange={(e) => setDraftLocation(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="mt-auto border-t pt-3">
+        {hasAnyFilter && (
           <button
-            onClick={() => onClearAll?.()}
-            className="text-sidebar-foreground/70 hover:text-sidebar-foreground flex items-center gap-1.5 text-xs transition-colors"
+            onClick={clearDraftAndApply}
+            className="text-muted-foreground hover:text-foreground mb-2 flex w-full items-center justify-center gap-1.5 text-xs transition-colors"
           >
             <XIcon className="size-3" />
             Clear filters
           </button>
-        </SidebarFooter>
-      )}
-      <SidebarRail />
-    </Sidebar>
+        )}
+        <Button
+          className="w-full cursor-pointer"
+          disabled={!isDirty}
+          onClick={apply}
+        >
+          Apply filters
+        </Button>
+      </div>
+    </aside>
   )
 }
 
-export {
-  JobSearchBar,
-  FilterSidebarProvider,
-  FilterSidebar,
-  FilterSidebarTrigger,
-  sourceIdToSourceName,
-}
+export { JobSearchBar, FilterPanel, sourceIdToSourceName }
 export type { JobFiltersProps }

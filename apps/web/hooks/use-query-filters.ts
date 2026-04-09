@@ -118,6 +118,27 @@ export function useQueryFilters() {
     [updateParams]
   )
 
+  const setAllFilters = React.useCallback(
+    (filters: {
+      location: string
+      sources: string[]
+      workModes: string[]
+      jobTypes: string[]
+      experience: string[]
+      dates: string[]
+    }) =>
+      updateParams({
+        location: filters.location,
+        sources: filters.sources,
+        workModes: filters.workModes,
+        jobTypes: filters.jobTypes,
+        experience: filters.experience,
+        dates: filters.dates,
+        page: "1",
+      }),
+    [updateParams]
+  )
+
   return {
     search,
     location,
@@ -136,5 +157,6 @@ export function useQueryFilters() {
     setSelectedExperience,
     setSelectedDates,
     clearAll,
+    setAllFilters,
   }
 }
