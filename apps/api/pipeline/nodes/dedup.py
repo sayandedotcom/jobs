@@ -1,4 +1,7 @@
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from pipeline.source_configs import get_source_config
+from pipeline.sources.registry import get_source
+from pipeline.sources.utils import cosine_similarity
 from pipeline.state import PipelineState
 
 from core.database import get_pool
@@ -10,13 +13,18 @@ async def dedup_node(state: PipelineState) -> dict:
     from core.config import settings
 
     pool = await get_pool()
+    source_name = state["source_name"]
+
     source_row = await pool.fetchrow(
         "SELECT id FROM sources WHERE name = $1",
-        state["source_name"],
+        source_name,
     )
     source_id = source_row["id"] if source_row else None
 
-    if state["source_name"] == "hackernews":
+    config = get_source_config(source_name)
+    source = get_source(source_name, **config)
+
+    if source and not source.use_embedding_dedup():
         return await _exact_dedup_only(state, pool, source_id)
 
     embeddings_model = GoogleGenerativeAIEmbeddings(
@@ -59,7 +67,7 @@ async def dedup_node(state: PipelineState) -> dict:
         best_listing_id = None
         for i, row in enumerate(existing_rows):
             if i < len(existing_embeddings):
-                score = _cosine_similarity(new_embedding, existing_embeddings[i])
+                score = cosine_similarity(new_embedding, existing_embeddings[i])
                 if score > best_score:
                     best_score = score
                     best_listing_id = row["id"]
@@ -113,12 +121,3 @@ async def _exact_dedup_only(state: PipelineState, pool, source_id: str | None) -
         "matched_listings": [],
         "posts_new": posts_new,
     }
-
-
-def _cosine_similarity(a: list[float], b: list[float]) -> float:
-    dot = sum(x * y for x, y in zip(a, b, strict=True))
-    mag_a = sum(x * x for x in a) ** 0.5
-    mag_b = sum(x * x for x in b) ** 0.5
-    if mag_a == 0 or mag_b == 0:
-        return 0.0
-    return dot / (mag_a * mag_b)

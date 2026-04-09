@@ -1,8 +1,7 @@
+from pipeline.source_configs import get_source_config
+from pipeline.sources.registry import get_source
 from pipeline.state import PipelineState
 
-# Generic job-related keywords for quick pre-filtering before LLM extraction.
-# This reduces the number of expensive LLM calls by discarding clearly unrelated posts.
-# Applied as simple substring matching against the lowercased raw_content.
 JOB_KEYWORDS = [
     "hiring",
     "job",
@@ -40,13 +39,11 @@ JOB_KEYWORDS = [
 
 
 async def filter_node(state: PipelineState) -> dict:
-    """LangGraph node: cheap keyword-based filter to discard non-job posts.
+    source_name = state["source_name"]
+    config = get_source_config(source_name)
+    source = get_source(source_name, **config)
 
-    Keeps any post whose raw_content contains at least one JOB_KEYWORD substring.
-    This is intentionally over-inclusive (high recall) — the LLM extract step
-    handles precision by classifying is_job_posting.
-    """
-    if state["source_name"] == "hackernews":
+    if source and source.skip_keyword_filter():
         return {"filtered_posts": state["raw_posts"]}
 
     filtered = []

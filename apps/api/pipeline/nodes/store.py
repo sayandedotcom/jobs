@@ -3,6 +3,8 @@ from datetime import datetime, UTC
 
 from core.database import get_pool
 from core.utils import cuid
+from pipeline.source_configs import get_source_config
+from pipeline.sources.registry import get_source
 from pipeline.state import PipelineState
 
 
@@ -10,12 +12,16 @@ async def store_node(state: PipelineState) -> dict:
     pool = await get_pool()
     jobs_added = 0
 
+    source_name = state["source_name"]
     source_row = await pool.fetchrow(
-        "SELECT id FROM sources WHERE name = $1", state["source_name"]
+        "SELECT id FROM sources WHERE name = $1", source_name
     )
     if not source_row:
         return {"jobs_added": 0, "errors": state["errors"] + 1}
     source_id = source_row["id"]
+
+    config = get_source_config(source_name)
+    source = get_source(source_name, **config)
 
     for item in state["new_listings"]:
         post = item["post"]
@@ -27,7 +33,10 @@ async def store_node(state: PipelineState) -> dict:
             except (ValueError, TypeError):
                 posted_at = None
 
-        listing = _build_listing_payload(state["source_name"], post, item)
+        if source:
+            listing = source.build_listing_payload(post, item)
+        else:
+            listing = _default_listing_payload(post, item)
 
         now_ts = datetime.now(UTC).replace(tzinfo=None)
         listing_row = await pool.fetchrow(
@@ -96,32 +105,17 @@ async def store_node(state: PipelineState) -> dict:
     return {"jobs_added": jobs_added}
 
 
-def _build_listing_payload(source_name: str, post: dict, item: dict) -> dict:
+def _default_listing_payload(post: dict, item: dict) -> dict:
     metadata = dict(post.get("metadata") or {})
-
-    if source_name == "hackernews":
-        header_line = _coerce_string(metadata.get("headerLine")) or _derive_title(
-            post["raw_content"]
-        )
-        if post.get("author") and not metadata.get("hnAuthor"):
-            metadata["hnAuthor"] = post["author"]
-        metadata["headerLine"] = header_line
-
-        return {
-            "title": _truncate_title(header_line),
-            "company": post.get("author") or "Unknown",
-            "description": post["raw_content"],
-            "location": None,
-            "salary": None,
-            "url": post.get("permalink"),
-            "jobType": None,
-            "applyUrl": None,
-            "embeddingText": item.get("embedding_text"),
-            "metadata": metadata,
-        }
+    first_line = post["raw_content"].split("\n", 1)[0].strip()
+    if first_line.startswith("Title:"):
+        first_line = first_line[len("Title:") :].strip()
+    title = first_line or "Untitled"
+    if len(title) > 150:
+        title = title[:147] + "..."
 
     return {
-        "title": _derive_title(post["raw_content"]),
+        "title": title,
         "company": post.get("author") or "Unknown",
         "description": post["raw_content"],
         "location": None,
@@ -132,23 +126,3 @@ def _build_listing_payload(source_name: str, post: dict, item: dict) -> dict:
         "embeddingText": item.get("embedding_text"),
         "metadata": metadata,
     }
-
-
-def _coerce_string(value: object) -> str | None:
-    if isinstance(value, str):
-        stripped = value.strip()
-        return stripped or None
-    return None
-
-
-def _derive_title(raw_content: str) -> str:
-    first_line = raw_content.split("\n", 1)[0].strip()
-    if first_line.startswith("Title:"):
-        first_line = first_line[len("Title:") :].strip()
-    return _truncate_title(first_line or "Untitled")
-
-
-def _truncate_title(value: str) -> str:
-    if len(value) > 150:
-        return value[:147] + "..."
-    return value
