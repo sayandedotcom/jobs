@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     prisma.listing.count({ where }),
     prisma.listing.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ postedAt: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
       include,

@@ -52,9 +52,9 @@ async def list_jobs(
     rows = await pool.fetch(
         f"""SELECT l.* {" , usj.id as save_id" if userId else ""}
         FROM listings l
-        {"LEFT JOIN user_saved_jobs usj ON usj.\"listingId\" = l.id AND usj.\"userId\" = $" + str(idx) if userId else ""}
+        {'LEFT JOIN user_saved_jobs usj ON usj."listingId" = l.id AND usj."userId" = $' + str(idx) if userId else ""}
         {where_clause}
-        ORDER BY l."createdAt" DESC
+        ORDER BY l."postedAt" DESC NULLS LAST, l."createdAt" DESC
         LIMIT ${idx + (1 if userId else 0)} OFFSET ${idx + (1 if userId else 0) + 1}""",
         *params,
         *([userId] if userId else []),
