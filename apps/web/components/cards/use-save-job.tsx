@@ -11,29 +11,84 @@ import {
 } from "@workspace/ui/components/tooltip"
 import { api, type Listing } from "@/lib/api-client"
 import { toast } from "sonner"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+
+type JobsQueryData = {
+  pages: {
+    jobs: Listing[]
+    total: number
+    page: number
+    pageSize: number
+  }[]
+  pageParams: number[]
+}
+
+function patchJobInCache(
+  data: JobsQueryData | undefined,
+  jobId: string,
+  isSaved: boolean
+): JobsQueryData | undefined {
+  if (!data) return data
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      jobs: page.jobs.map((j) => (j.id === jobId ? { ...j, isSaved } : j)),
+    })),
+  }
+}
+
+function patchAllJobsQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  jobId: string,
+  isSaved: boolean
+) {
+  queryClient
+    .getQueryCache()
+    .findAll({ queryKey: ["jobs"] })
+    .forEach((query) => {
+      query.setData(
+        patchJobInCache(
+          query.state.data as JobsQueryData | undefined,
+          jobId,
+          isSaved
+        )
+      )
+    })
+}
 
 export function useSaveJob(job: Listing) {
-  const [saved, setSaved] = React.useState(job.isSaved)
+  const queryClient = useQueryClient()
 
-  const handleSave = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      if (!saved) {
+  const mutation = useMutation({
+    mutationFn: async (save: boolean) => {
+      if (save) {
         await api.saved.create(job.id)
-        setSaved(true)
-        toast.success("Job bookmarked")
       } else {
         await api.saved.deleteByListing(job.id)
-        setSaved(false)
-        toast.success("Removed from bookmarks")
       }
-    } catch {
-      // ignore
-    }
-  }
+    },
+    onMutate: async (save) => {
+      await queryClient.cancelQueries({ queryKey: ["jobs"] })
+      patchAllJobsQueries(queryClient, job.id, save)
+      toast.success(save ? "Job bookmarked" : "Removed from bookmarks")
+    },
+    onError: (_err, save) => {
+      patchAllJobsQueries(queryClient, job.id, !save)
+      toast.error("Failed to update bookmark")
+    },
+  })
 
-  return { saved, handleSave }
+  const handleSave = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      mutation.mutate(!job.isSaved)
+    },
+    [mutation, job.isSaved]
+  )
+
+  return { saved: job.isSaved, handleSave }
 }
 
 export function SaveButton({
