@@ -13,7 +13,7 @@ router = APIRouter(prefix="/scan", tags=["scan"])
 
 @router.post("/trigger", response_model=TriggerScanResponse)
 async def trigger_scan(
-    source: str = "reddit",
+    source: str,
     x_cron_secret: str | None = Header(None),
 ):
     if settings.CRON_SECRET:

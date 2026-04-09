@@ -146,29 +146,28 @@ class RedditService(BaseSource):
             created_at = datetime.fromtimestamp(submission.created_utc, tz=UTC)
             if since and created_at < since:
                 continue
-                content = self._build_content(submission)
-                # Prefix with 'reddit_s_' to distinguish search results from subreddit posts
-                posts.append(
-                    {
-                        "external_id": f"reddit_{submission.id}",
-                        "raw_content": content,
-                        "permalink": f"https://reddit.com{submission.permalink}",
-                        "author": str(submission.author) if submission.author else None,
-                        "posted_at": created_at.isoformat(),
-                        "metadata": {
-                            "subreddit": str(submission.subreddit)
-                            if hasattr(submission, "subreddit")
-                            else None,
-                            "score": submission.score,
-                            "num_comments": submission.num_comments,
-                            "flair": submission.link_flair_text
-                            if hasattr(submission, "link_flair_text")
-                            and submission.link_flair_text
-                            else None,
-                            "title": submission.title,
-                        },
-                    }
-                )
+            content = self._build_content(submission)
+            posts.append(
+                {
+                    "external_id": f"reddit_{submission.id}",
+                    "raw_content": content,
+                    "permalink": f"https://reddit.com{submission.permalink}",
+                    "author": str(submission.author) if submission.author else None,
+                    "posted_at": created_at.isoformat(),
+                    "metadata": {
+                        "subreddit": str(submission.subreddit)
+                        if hasattr(submission, "subreddit")
+                        else None,
+                        "score": submission.score,
+                        "num_comments": submission.num_comments,
+                        "flair": submission.link_flair_text
+                        if hasattr(submission, "link_flair_text")
+                        and submission.link_flair_text
+                        else None,
+                        "title": submission.title,
+                    },
+                }
+            )
         return posts
 
     def _build_content(self, submission) -> str:
