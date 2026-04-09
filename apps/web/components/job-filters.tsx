@@ -426,7 +426,6 @@ function FilterSidebar({
                   placeholder="e.g. NYC, Berlin"
                   value={location}
                   onChange={(e) => onLocationChange(e.target.value)}
-                  className="bg-background h-8 border-none shadow-none"
                 />
               </div>
             </SidebarMenuItem>
