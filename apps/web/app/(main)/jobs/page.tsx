@@ -15,16 +15,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  LayoutGridIcon,
-  ClockIcon,
-  PuzzleIcon,
-} from "lucide-react"
-import { api, type Listing } from "@/lib/api-client"
+import { LayoutGridIcon, LoaderIcon } from "lucide-react"
 import { useQueryFilters } from "@/hooks/use-query-filters"
 import { useCookieState } from "@/hooks/use-cookie-state"
+import { useInfiniteJobs } from "@/hooks/use-infinite-jobs"
 import { source } from "@/config/source"
 
 export default function JobsPage() {
@@ -39,7 +33,7 @@ export default function JobsPage() {
             </p>
           </div>
           <div className="space-y-3 pt-2">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <JobCardSkeleton key={i} />
             ))}
           </div>
@@ -51,11 +45,30 @@ export default function JobsPage() {
   )
 }
 
+function useInfiniteScroll(callback: () => void, enabled: boolean) {
+  const sentinelRef = React.useRef<HTMLDivElement | null>(null)
+
+  React.useEffect(() => {
+    if (!enabled) return
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) callback()
+      },
+      { rootMargin: "400px" }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [callback, enabled])
+
+  return sentinelRef
+}
+
 function JobsPageContent() {
   const {
     search,
     location,
-    page,
     selectedSources,
     selectedWorkModes,
     selectedJobTypes,
@@ -63,7 +76,6 @@ function JobsPageContent() {
     selectedDates,
     setSearch,
     setLocation,
-    setPage,
     setSelectedSources,
     setSelectedWorkModes,
     setSelectedJobTypes,
@@ -72,41 +84,28 @@ function JobsPageContent() {
     clearAll,
   } = useQueryFilters()
 
-  const [jobs, setJobs] = React.useState<Listing[]>([])
-  const [total, setTotal] = React.useState(0)
-  const [loading, setLoading] = React.useState(true)
   const [twoColumns, setTwoColumns] = useCookieState<boolean>(
     "jobs-grid-view",
     false,
     { serialize: (v) => String(v), deserialize: (v) => v === "true" }
   )
 
-  React.useEffect(() => {
-    const fetchJobs = async () => {
-      setLoading(true)
-      try {
-        const data = await api.jobs.list({
-          search: search || undefined,
-          location: location || undefined,
-          page,
-          pageSize: 20,
-        })
-        setJobs(data.jobs)
-        setTotal(data.total)
-      } catch {
-        setJobs([])
-        setTotal(0)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchJobs()
-  }, [search, location, page])
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteJobs({
+      search: search || undefined,
+      location: location || undefined,
+    })
 
-  const totalPages = Math.ceil(total / 20)
+  const total = data?.total ?? 0
+
+  const fetchMore = React.useCallback(() => {
+    if (!isFetchingNextPage) fetchNextPage()
+  }, [fetchNextPage, isFetchingNextPage])
+
+  const sentinelRef = useInfiniteScroll(fetchMore, !!hasNextPage)
 
   const filteredJobs = React.useMemo(() => {
-    return jobs.filter((job) => {
+    return (data?.jobs ?? []).filter((job) => {
       if (selectedSources.length > 0) {
         const sourceId = job.sourceName
           ? sourceIdToSourceName(job.sourceName)
@@ -152,7 +151,7 @@ function JobsPageContent() {
       return true
     })
   }, [
-    jobs,
+    data,
     selectedSources,
     selectedWorkModes,
     selectedJobTypes,
@@ -213,7 +212,7 @@ function JobsPageContent() {
               </a>
               <span>•</span>
               <span>
-                {loading
+                {isLoading
                   ? "Searching for jobs..."
                   : `${displayTotal} job${displayTotal !== 1 ? "s" : ""} found`}
               </span>
@@ -222,11 +221,11 @@ function JobsPageContent() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {loading ? (
+          {isLoading ? (
             <div
               className={twoColumns ? "grid grid-cols-2 gap-3" : "space-y-3"}
             >
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <JobCardSkeleton key={i} />
               ))}
             </div>
@@ -244,29 +243,11 @@ function JobsPageContent() {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeftIcon className="size-4" />
-                Previous
-              </Button>
-              <span className="text-muted-foreground text-sm">
-                Page {page} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-                <ChevronRightIcon className="size-4" />
-              </Button>
+          {hasNextPage && (
+            <div ref={sentinelRef} className="flex justify-center py-4">
+              {isFetchingNextPage && (
+                <LoaderIcon className="text-muted-foreground size-5 animate-spin" />
+              )}
             </div>
           )}
         </div>
