@@ -3,6 +3,12 @@
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { ArrowUpRightIcon, CalendarIcon } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-US", {
@@ -41,10 +47,19 @@ export function CardDateFooter({
         <div />
       )}
       {date && (
-        <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-          <CalendarIcon className="size-3.5" />
-          {formatDate(date)}
-        </span>
+        <TooltipProvider delay={300}>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs">
+                  <CalendarIcon className="size-3.5" />
+                  {formatDate(date)}
+                </span>
+              }
+            />
+            <TooltipContent>{`Posted on ${formatDate(date)}`}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </div>
   )
