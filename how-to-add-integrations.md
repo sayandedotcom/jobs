@@ -19,7 +19,7 @@ This name must be consistent across:
 - `get_source_name()` in Python
 - `sources` DB table `name` column
 - `SOURCE_CONFIGS` dict key
-- `config/source.ts` `id` field (or add an alias — see step 9)
+- `config/source.ts` `id` field (or add an alias — see step 8)
 
 ---
 
@@ -161,14 +161,75 @@ class Settings(BaseSettings):
 
 ---
 
-## 5. Add shared utilities if needed
+## 5. Incremental fetching and dedup
+
+The pipeline has **two layers** that prevent duplicate content. Every source must work with both.
+
+### Layer 1: Time-based incremental fetch (fetch_node)
+
+`fetch_node` looks up the last completed scan's `startedAt` and passes it as the `since` parameter to `fetch_new_posts()`. Your source **must** use it to skip old posts at the API level — don't fetch everything and filter later.
+
+```python
+async def fetch_new_posts(self, sub_sources, since=None):
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for sub in sub_sources:
+            resp = await client.get(f"https://api.example.com/jobs")
+            for item in resp.json():
+                created_at = parse_date(item)
+                if since and created_at and created_at < since:
+                    continue  # skip posts older than last scan
+                posts.append(build_raw_post(item))
+```
+
+If the source API supports a date filter query param, use that instead of client-side filtering:
+
+```python
+params = {}
+if since:
+    params["updated_after"] = since.isoformat()
+resp = await client.get(url, params=params)
+```
+
+### Layer 2: Exact dedup (dedup_node)
+
+After fetching, `dedup_node` checks every post's `external_id` against the `raw_posts` table:
+
+```sql
+SELECT id FROM raw_posts WHERE "sourceId" = $1 AND "externalId" = $2
+```
+
+If a row exists with that `external_id`, the post is **skipped**. This catches anything that slipped past the time filter.
+
+### Which dedup strategy your source uses
+
+By default, sources use **embedding-based fuzzy dedup** (cosine similarity on post text). If your source has **unique, stable external IDs** (most ATS APIs do), override `use_embedding_dedup()` to return `False` for cheaper exact-only dedup:
+
+```python
+def use_embedding_dedup(self) -> bool:
+    return False  # external_id is reliable, skip expensive embeddings
+```
+
+### Your `external_id` contract
+
+Every `RawPostData` must have a unique, **stable** `external_id` that:
+
+- Never changes for the same post across scans (e.g., `gh_stripe_12345`, `hn_42536123`)
+- Is prefixed with a source identifier to avoid collisions across sources
+- Is deterministic — the same post always produces the same `external_id`
+
+Bad: using post title or URL hash (can change)
+Good: using the source's native ID (Algolia objectID, Greenhouse job ID, Reddit submission ID)
+
+---
+
+## 6. Add shared utilities if needed
 
 - **HTML stripping**: `from pipeline.sources.utils import html_to_plain` — do NOT define a local `_html_to_plain`
 - **Cosine similarity**: `from pipeline.sources.utils import cosine_similarity` — do NOT define a local one
 
 ---
 
-## 6. Seed the database
+## 7. Seed the database
 
 Add to `packages/database/prisma/seed.ts`:
 
@@ -207,7 +268,7 @@ pnpm --filter @workspace/database db:seed
 
 ---
 
-## 7. Add frontend source config
+## 8. Add frontend source config
 
 Add to `apps/web/config/source.ts`:
 
@@ -240,7 +301,7 @@ Prefer making them match instead of adding aliases.
 
 ---
 
-## 8. Add a card component (if needed)
+## 9. Add a card component (if needed)
 
 ### Default: GenericCard handles it
 
@@ -317,7 +378,7 @@ const CARD_REGISTRY: Record<string, React.ComponentType<{ job: Listing }>> = {
 
 ---
 
-## 9. Add a source label suffix (optional)
+## 10. Add a source label suffix (optional)
 
 If the source needs a descriptive badge suffix (like "Who is hiring?" for HN), add to `apps/web/components/cards/source-bar.tsx`:
 
@@ -330,7 +391,7 @@ const SOURCE_LABEL_SUFFIX: Record<string, string> = {
 
 ---
 
-## 10. Write tests
+## 11. Write tests
 
 Create `apps/api/tests/test_mysource_source.py`:
 
@@ -356,7 +417,7 @@ cd apps/api && uv run pytest tests/test_mysource_source.py -v
 
 ---
 
-## 11. Verify end-to-end
+## 12. Verify end-to-end
 
 ```bash
 # Python lint + format
@@ -381,7 +442,7 @@ curl -X POST http://localhost:8000/api/scan/trigger?source=mysource
 
 ---
 
-## 12. Admin page — scan triggers
+## 13. Admin page — scan triggers
 
 The admin page at `/admin` shows all sources from `config/source.ts` and lets you trigger scans.
 
@@ -433,6 +494,9 @@ If any of these are missing, the scan will fail with a 404 or return 0 posts.
 ## Checklist
 
 - [ ] Source adapter created in `pipeline/sources/`
+- [ ] `fetch_new_posts` respects `since` parameter for incremental fetching
+- [ ] `external_id` is unique, stable, and source-prefixed
+- [ ] `use_embedding_dedup()` returns correct value for this source
 - [ ] Registered in `pipeline/sources/__init__.py`
 - [ ] Config added to `pipeline/source_configs.py`
 - [ ] Env vars added to `core/config.py` (if needed)
