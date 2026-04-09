@@ -19,6 +19,7 @@ import { LayoutGridIcon, LoaderIcon } from "lucide-react"
 import { useQueryFilters } from "@/hooks/use-query-filters"
 import { useCookieState } from "@/hooks/use-cookie-state"
 import { useInfiniteJobs } from "@/hooks/use-infinite-jobs"
+import { useSidebar } from "@workspace/ui/components/sidebar"
 import { source } from "@/config/source"
 
 export default function JobsPage() {
@@ -83,6 +84,22 @@ function JobsPageContent() {
     setSelectedDates,
     clearAll,
   } = useQueryFilters()
+
+  const { state: filterSidebarState } = useSidebar()
+
+  React.useEffect(() => {
+    const inset = document.querySelector(
+      '[data-slot="sidebar-inset"]'
+    ) as HTMLElement | null
+    if (!inset) return
+    const width = filterSidebarState === "expanded" ? "20rem" : "3rem"
+    inset.style.transition = "margin-right 200ms linear"
+    inset.style.marginRight = width
+    return () => {
+      inset.style.marginRight = ""
+      inset.style.transition = ""
+    }
+  }, [filterSidebarState])
 
   const [twoColumns, setTwoColumns] = useCookieState<boolean>(
     "jobs-grid-view",

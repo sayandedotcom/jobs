@@ -28,9 +28,8 @@ export default function AdminPage() {
   }
 
   const triggerAll = async () => {
-    for (const s of source) {
-      await triggerScan(s.id)
-    }
+    const activeSources = source.filter((s) => s.active)
+    await Promise.allSettled(activeSources.map((s) => triggerScan(s.id)))
   }
 
   const anyLoading = Object.values(scanStatuses).some((s) => s === "loading")

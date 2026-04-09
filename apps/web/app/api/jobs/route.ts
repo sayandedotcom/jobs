@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   const location = searchParams.get("location")
   const jobType = searchParams.get("jobType")
   const company = searchParams.get("company")
+  const sourceNames = searchParams.get("sourceNames")
   const page = Math.max(1, Number(searchParams.get("page")) || 1)
   const pageSize = Math.min(
     100,
@@ -25,6 +26,9 @@ export async function GET(request: Request) {
   if (location) where.location = { contains: location, mode: "insensitive" }
   if (jobType) where.jobType = jobType
   if (company) where.company = { contains: company, mode: "insensitive" }
+  if (sourceNames) {
+    where.sourceName = { in: sourceNames.split(",") }
+  }
 
   const include = userId
     ? { userSavedJobs: { where: { userId }, select: { id: true } } }

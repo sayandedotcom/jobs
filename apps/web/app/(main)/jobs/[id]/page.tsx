@@ -5,6 +5,22 @@ import Link from "next/link"
 import { api, type Listing } from "@/lib/api-client"
 import { authClient } from "@/lib/auth-client"
 import { Badge } from "@workspace/ui/components/badge"
+import { HtmlRenderer } from "@/components/html-renderer"
+
+function getHtmlContent(job: Listing): string | null {
+  if (job.sourceName !== "hackernews") return null
+  const meta = job.metadata as Record<string, unknown> | null
+  const htmlContent = meta?.htmlContent as string | null
+  if (!htmlContent) return null
+  const headerLine = (meta?.headerLine as string) || ""
+  if (headerLine) {
+    const idx = htmlContent.indexOf(headerLine)
+    if (idx !== -1) {
+      return htmlContent.slice(idx + headerLine.length).trim() || htmlContent
+    }
+  }
+  return htmlContent
+}
 
 export default function JobDetailPage({
   params,
@@ -20,7 +36,10 @@ export default function JobDetailPage({
   React.useEffect(() => {
     api.jobs
       .get(id)
-      .then(setJob)
+      .then((j) => {
+        setJob(j)
+        setSaved(j.isSaved)
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -30,6 +49,9 @@ export default function JobDetailPage({
       if (!saved) {
         await api.saved.create(job.id)
         setSaved(true)
+      } else {
+        await api.saved.deleteByListing(job.id)
+        setSaved(false)
       }
     } catch {
       // ignore
@@ -50,13 +72,15 @@ export default function JobDetailPage({
     )
   }
 
+  const htmlContent = getHtmlContent(job)
+
   return (
     <div className="space-y-6">
       <Link
         href="/jobs"
         className="text-muted-foreground hover:text-foreground text-sm"
       >
-        ← Back to jobs
+        &larr; Back to jobs
       </Link>
 
       <div className="space-y-4">
@@ -76,14 +100,20 @@ export default function JobDetailPage({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {job.location && <Badge variant="outline">📍 {job.location}</Badge>}
-          {job.salary && <Badge variant="outline">💰 {job.salary}</Badge>}
+          {job.location && <Badge variant="outline">{job.location}</Badge>}
+          {job.salary && <Badge variant="outline">{job.salary}</Badge>}
           {job.jobType && <Badge>{job.jobType}</Badge>}
         </div>
 
-        <div className="rounded-lg border p-6 text-sm leading-relaxed whitespace-pre-wrap">
-          {job.description}
-        </div>
+        {htmlContent ? (
+          <div className="rounded-lg border p-6 text-sm leading-relaxed">
+            <HtmlRenderer content={htmlContent} />
+          </div>
+        ) : (
+          <div className="rounded-lg border p-6 text-sm leading-relaxed whitespace-pre-wrap">
+            {job.description}
+          </div>
+        )}
 
         <div className="flex gap-3">
           {job.applyUrl && (

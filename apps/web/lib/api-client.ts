@@ -133,12 +133,17 @@ export const api = {
       location?: string
       jobType?: string
       company?: string
+      sourceNames?: string[]
       page?: number
       pageSize?: number
-    }) =>
-      apiFetch<ListingList>("/api/jobs", {
-        params: params as Record<string, string | number | undefined>,
-      }),
+    }) => {
+      const { sourceNames, ...rest } = params ?? {}
+      const p: Record<string, string | number | undefined> = {
+        ...rest,
+        ...(sourceNames?.length ? { sourceNames: sourceNames.join(",") } : {}),
+      }
+      return apiFetch<ListingList>("/api/jobs", { params: p })
+    },
 
     get: (id: string) => apiFetch<Listing>(`/api/jobs/${id}`),
   },
@@ -160,6 +165,11 @@ export const api = {
 
     delete: (savedId: string) =>
       apiFetch<void>(`/api/saved/${savedId}`, {
+        method: "DELETE",
+      }),
+
+    deleteByListing: (listingId: string) =>
+      apiFetch<void>(`/api/saved/by-listing/${listingId}`, {
         method: "DELETE",
       }),
   },
