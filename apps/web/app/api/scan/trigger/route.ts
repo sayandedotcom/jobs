@@ -1,10 +1,7 @@
 import { env } from "@/env"
+import { sourceIdToSourceName } from "@/lib/source-mapping"
 
 const PYTHON_API_URL = env.PYTHON_API_URL
-
-const SOURCE_ALIASES: Record<string, string> = {
-  ycombinator: "hackernews",
-}
 
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -13,7 +10,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "source is required" }, { status: 400 })
   }
 
-  source = SOURCE_ALIASES[source] ?? source
+  source = sourceIdToSourceName(source)
 
   const res = await fetch(
     `${PYTHON_API_URL}/api/scan/trigger?source=${encodeURIComponent(source)}`,

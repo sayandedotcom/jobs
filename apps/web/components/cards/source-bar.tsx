@@ -2,15 +2,12 @@
 
 import * as React from "react"
 import { source, type Source } from "@/config/source"
+import { sourceNameToSourceId } from "@/lib/source-mapping"
 import { Badge } from "@workspace/ui/components/badge"
 import { SaveButton } from "@/components/cards/use-save-job"
 
-const SOURCE_ID_ALIASES: Record<string, string> = {
-  hackernews: "ycombinator",
-}
-
 export function getSourceConfig(sourceName: string | null): Source | undefined {
-  const id = sourceName ? (SOURCE_ID_ALIASES[sourceName] ?? sourceName) : null
+  const id = sourceName ? sourceNameToSourceId(sourceName) : null
   return source.find((s) => s.id === id)
 }
 

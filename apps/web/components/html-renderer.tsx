@@ -39,9 +39,6 @@ export function HtmlRenderer({ content }: { content: string }) {
   const html = linkifyHtml(content)
 
   return (
-    <div
-      className="tiptap-renderer"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className="html-renderer" dangerouslySetInnerHTML={{ __html: html }} />
   )
 }

@@ -32,11 +32,8 @@ import {
   PanelRightIcon,
 } from "lucide-react"
 import { source } from "@/config/source"
+import { sourceIdToSourceName } from "@/lib/source-mapping"
 import { Button } from "@workspace/ui/components/button"
-
-const SOURCE_ID_ALIASES: Record<string, string> = {
-  hackernews: "ycombinator",
-}
 
 const SOURCE_OPTIONS: MultiSelectOption[] = source
   .filter((s) => s.active)
@@ -93,13 +90,6 @@ function generateDateOptions(): MultiSelectOption[] {
 }
 
 const DATE_OPTIONS = generateDateOptions()
-
-function sourceIdToSourceName(sourceId: string): string {
-  for (const [alias, id] of Object.entries(SOURCE_ID_ALIASES)) {
-    if (id === sourceId) return alias
-  }
-  return sourceId
-}
 
 interface JobFiltersProps {
   search: string
