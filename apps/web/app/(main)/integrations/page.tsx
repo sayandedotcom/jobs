@@ -1,6 +1,14 @@
+"use client"
+
 import { source } from "@/config/source"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Separator } from "@workspace/ui/components/separator"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 
 export default function IntegrationsPage() {
   const active = source.filter((s) => s.active)
@@ -78,12 +86,21 @@ function SourceCard({
             <div className="flex items-center gap-2">
               <span className="truncate font-medium">{name}</span>
               {isActive ? (
-                <span className="relative flex size-3 items-center justify-center">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
-                </span>
+                <TooltipProvider delay={300}>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <span className="relative mb-0.5 flex size-3 items-center justify-center">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
+                        </span>
+                      }
+                    />
+                    <TooltipContent>{"Fetching Jobs..."}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ) : (
-                <span className="relative flex size-3 items-center justify-center">
+                <span className="relative mb-0.5 flex size-3 items-center justify-center">
                   <span className="inline-flex size-3 rounded-full bg-red-500" />
                 </span>
               )}
